@@ -1,0 +1,77 @@
+library(tidyverse)
+library(zoo)
+library(RCurl)
+
+source('R/get_targets.R')
+source('R/PE_functions.R')
+
+
+
+# ================= Get targets ===========================
+# Get observational target data
+
+fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/8/fbb8c7a0230f4587f1c6e11417fe9dce"
+bvre_L1 <- "https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv"
+bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038"
+
+fcre_depths <- c(1.6, 9)
+bvre_depths <- c(1.5, 13)
+
+targets <- get_targets_P1D(fcre_file = fcre_EDI, bvre_file = c(bvre_L1, bvre_EDI)) |> 
+  filter(year(datetime) %in% c(2019,2020, 2021, 2022, 2023))
+
+# Get temperature profiles
+temp_profiles <- 
+  map2(c(NULL, bvre_L1), c(fcre_EDI, bvre_EDI), get_temp_profiles) |>
+  list_rbind() |> 
+  filter(year(datetime) %in% c(2019,2020, 2021, 2022, 2023))
+# =====================================================#
+
+# Set parameters for PE calculations
+D  <- 3 # length of the word, embedding dimension
+tau <- 1 # embedding time delay
+window_length <- 30 # for a rolling PE how long should the time series be
+
+# Summaries of PE by variable, site and depth
+PE_byvar <- targets |>
+  group_by(depth_m, variable, site_id) |> 
+  summarise(PE = calculate_PE(observation)) 
+
+PE_byvar |> 
+  ggplot(aes(y = PE, x = variable, fill = as_factor(depth_m))) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(x='Variable', y = 'Normalised PE') +
+  theme_bw() +
+  facet_wrap(~site_id) +
+  scale_fill_viridis_d(option = 'C', name = 'Depth_m') +
+  scale_y_continuous(expand = c(0,0), limits = c(0,1))
+# ----------------------------#
+
+# how does PE vary over time?
+x <- targets |>  
+  filter(variable == 'DO_mgL_mean',
+         depth_m == 1.6) |>
+  na.omit() # remove all NAs
+
+
+all_dates <- data.frame(datetime = seq.Date(min(as_date(x$datetime)), 
+                                            max(as_date(x$datetime)), 'day'))  
+
+x <- full_join(all_dates, x) |> 
+  select(datetime, observation)
+
+PE_ts <- calculate_PE_ts(x = x,
+                         tie_method = 'first', 
+                         D = D,
+                         tau = tau, 
+                         use_weights = T, 
+                         window_width = window_length) 
+
+PE_ts |> 
+  mutate(doy = yday(datetime),
+         year = year(datetime)) |> 
+  ggplot(aes(x=doy, y=PE, colour = as.factor(year))) +
+  geom_line() +
+  geom_smooth(method = 'gam') +
+  scale_colour_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
+  theme_bw()
