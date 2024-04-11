@@ -37,6 +37,7 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
 D  <- 3 # length of the word, embedding dimension
 tau <- 1 # embedding time delay
 window_length <- 30 # for a rolling PE how long should the time series be
+resample_n <- 100 # for the resampled PE
 
 # Summaries of PE by variable, site and depth
 PE_byvar <- targets |>
@@ -53,20 +54,33 @@ PE_byvar |>
   scale_y_continuous(expand = c(0,0), limits = c(0,1))
 # ----------------------------#
 
+# Resample the timeseries to calculate the PE on subsets of the data to generate a distribution
+targets <-
+  targets |>
+  mutate(datetime = as_date(datetime)) |> 
+  tsibble::as_tsibble(index = datetime, key = c(variable, site_id, depth_m)) |> 
+  tsibble::fill_gaps(.full = FALSE) |> 
+  as_tibble() |> 
+  mutate(observation = imputeTS::na_interpolation(observation, 'linear'))
+
+targets_resample <- targets |> 
+  reframe(resample(ts = observation, length.out = 100, n = 100), 
+          .by = c(variable, site_id, depth_m))
+
+PE_resampled <- targets_resample |> 
+  group_by(n, site_id, variable, depth_m) |> 
+  summarise(PE = calculate_PE(observation), .groups = 'drop')
+
+PE_resampled |> 
+  mutate(depth_m = as_factor(depth_m)) |> 
+  ggplot(aes(x=PE, fill = depth_m, y = after_stat(density))) +
+  geom_histogram(bins = 20, position = 'identity', alpha = 0.5) +
+  facet_grid(variable~site_id)
+
+#========================================#
 # how does PE vary over time?
-x <- targets |>  
-  filter(variable == 'DO_mgL_mean',
-         depth_m == 1.6) |>
-  na.omit() # remove all NAs
 
-
-all_dates <- data.frame(datetime = seq.Date(min(as_date(x$datetime)), 
-                                            max(as_date(x$datetime)), 'day'))  
-
-x <- full_join(all_dates, x) |> 
-  select(datetime, observation)
-
-PE_ts <- calculate_PE_ts(x = x,
+PE_ts <- calculate_PE_ts(x = targets,
                          tie_method = 'first', 
                          D = D,
                          tau = tau, 
