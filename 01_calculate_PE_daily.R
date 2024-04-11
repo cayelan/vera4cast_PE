@@ -13,6 +13,7 @@ source('R/PE_functions.R')
 fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/8/fbb8c7a0230f4587f1c6e11417fe9dce"
 bvre_L1 <- "https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv"
 bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038"
+fcre_L1 <- 'none'
 
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
@@ -22,9 +23,14 @@ targets <- get_targets_P1D(fcre_file = fcre_EDI, bvre_file = c(bvre_L1, bvre_EDI
 
 # Get temperature profiles
 temp_profiles <- 
-  map2(c(NULL, bvre_L1), c(fcre_EDI, bvre_EDI), get_temp_profiles) |>
+  map2(c(fcre_L1, bvre_L1), c(fcre_EDI, bvre_EDI), get_temp_profiles) |>
   list_rbind() |> 
   filter(year(datetime) %in% c(2019,2020, 2021, 2022, 2023))
+
+
+strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profiles)
+
+
 # =====================================================#
 
 # Set parameters for PE calculations
