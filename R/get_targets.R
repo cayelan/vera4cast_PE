@@ -139,7 +139,8 @@ get_targets_P1D <- function(fcre_file,
 get_temp_profiles <- function(current_file = NULL, historic_file){
   source('R/find_depths.R')
  
-  if (length(current_file) !=0) {
+  if (current_file != 'none') {
+    message('reading ', current_file)
     current_df <- readr::read_csv(current_file, show_col_types = F) |>
       dplyr::filter(Site == 50) |>
       dplyr::select(Reservoir, DateTime,
@@ -205,6 +206,7 @@ get_temp_profiles <- function(current_file = NULL, historic_file){
     message('Current file ready')
   } else {
     current_df_1 <- NULL
+    message('No current file')
   }
   
   # read in historical data file
@@ -297,3 +299,96 @@ get_temp_profiles <- function(current_file = NULL, historic_file){
   return(final_df)
 }
 
+
+calc_strat_dates <- function(density_diff = 0.1,
+                             temp_profiles) {
+  
+  ## extract the depths that will be used to calculate the density difference (surface, bottom)
+  depths_use <- temp_profiles |>
+    na.omit() |> 
+    dplyr::group_by(datetime, site_id) |>
+    dplyr::summarise(top = min(as.numeric(depth_m, na.rm = T)),
+                     bottom = max(as.numeric(depth_m, na.rm = T)),.groups = 'drop') |>
+    tidyr::pivot_longer(cols = top:bottom, 
+                        names_to = 'location',
+                        values_to = 'depth_m')
+  
+  sites <- distinct(depths_use, site_id) |> pull()
+  
+  strat_dates <- NULL
+  
+  for (site in sites) {
+    temp_profile_site <- filter(temp_profiles, site_id == site)
+    # need a full timeseries
+    all_dates <- data.frame(datetime = seq.Date(min(temp_profile_site$datetime), 
+                                                max(temp_profile_site$datetime),
+                                                'day'))
+    density_obs <-
+      filter(depths_use, site_id == site) |> 
+      inner_join(na.omit(temp_profile_site), by = join_by(datetime, site_id, depth_m)) |> 
+      mutate(density = rLakeAnalyzer::water.density(observation)) |> 
+      select(datetime, site_id, density, observation, location) |> 
+      pivot_wider(values_from = c(density, observation), names_from = location, id_cols = c(datetime, site_id)) |> 
+      full_join(all_dates, by = 'datetime') |> 
+      mutate(dens_diff = density_bottom - density_top,
+             strat = ifelse(abs(dens_diff > 0.1) & observation_top > observation_bottom, 1, 0),
+             strat = imputeTS::na_interpolation(strat, option = 'linear'))
+    
+    
+    # extract the dates of the stratified periods
+    #using a loop function to go through each year and do the rle function
+    
+    strat <- data.frame(year = unique(year(density_obs$datetime)), 
+                        length = NA,
+                        start = NA,
+                        end = NA)
+    
+    for (i in 1:nrow(strat)) {
+      year_use <- strat$year[i]
+      
+      temp.dens <- density_obs %>%
+        filter(year(datetime) == year_use)
+      
+      if (nrow(temp.dens) >= 300) {
+        #run length encoding according to the strat var
+        temp.rle <- rle(temp.dens$strat)
+        
+        #what is the max length for which the value is "norm"
+        strat$length[i] <- max(temp.rle$lengths[temp.rle$values==1], 
+                               na.rm = T)
+        
+        #stratification dates
+        rle.strat <- data.frame(strat = temp.rle$values, 
+                                lengths = temp.rle$lengths)
+        
+        # Get the end of ech run
+        rle.strat$end <- cumsum(rle.strat$lengths)
+        # Get the start of each run
+        rle.strat$start <- rle.strat$end - rle.strat$lengths + 1
+        
+        # Sort rows by whehter it is stratified or not
+        rle.strat <- rle.strat[order(rle.strat$strat), ]
+        
+        start.row <- rle.strat$start[which(rle.strat$length == max(rle.strat$lengths)
+                                           & rle.strat$strat == 1)] 
+        #gets the row with the start date
+        #of the run which has the max length and is 1
+        
+        end.row <- rle.strat$end[which(rle.strat$length == max(rle.strat$lengths)
+                                       & rle.strat$strat == 1)] 
+        #gets the row with the end date
+        #of the run which has the max length and is TRuE
+        
+        strat$start[which(strat$year == year_use)] <- as.character(temp.dens$datetime[start.row])
+        strat$end[which(strat$year == year_use)] <- as.character(temp.dens$datetime[end.row])
+        
+        strat$site_id <- site
+      }
+     
+    } 
+    strat_dates <- bind_rows(strat, strat_dates)
+    message(site)
+  }
+  
+  return(na.omit(strat_dates))
+}
