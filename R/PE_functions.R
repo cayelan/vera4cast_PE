@@ -1,5 +1,14 @@
-calculate_PE <- function(x, # a time series
-                         tie_method = 'first', # method used to break ties
+#' calculate permutation entropy
+#' 
+#' @param x a time series
+#' @param tie_method method used to break ties
+#' @param D embedding dimension
+#' @param tau the embedding time delay
+#' @param use_weights should the weighted or unweighted PE be calculated?
+#' @returns a number
+
+calculate_PE <- function(x, 
+                         tie_method = 'first',
                          D = 3, # Embedding dimension (3)
                          tau = 1, # Embedding time delay (1)
                          use_weights = T) {
@@ -23,7 +32,13 @@ calculate_PE <- function(x, # a time series
   return(PE)
 }
 
-# function to generate the matrix
+#' generate embedded matrix
+#' 
+#' @param x a time series vector
+#' @param D embedding dimension
+#' @param tau the embedding time delay
+#' @returns a matrix
+
 embed_data <- function(x, 
                        D = 3,
                        tau) {
@@ -39,11 +54,15 @@ embed_data <- function(x,
   return(x_emb)
 }
 
-
-# function to calculate the distribution of runs
-calc_distr_runs <- function(x_emb, # a embedded matrix from embed data
-                            tie_method, # what method should be used to break ties
-                            use_weights # should use weights?
+#' calculate distribution of runs
+#' 
+#' @param x_emb a embedded matrix from embed data
+#' @param tie_method method used to break ties
+#' @param use_weights should the weighted or unweighted PE be calculated?
+#' @returns a dataframe
+calc_distr_runs <- function(x_emb, 
+                            tie_method, 
+                            use_weights 
                             ) {
   if (use_weights == T) {
     words <- apply(x_emb, 1, function(i) paste(rank(i, ties.method = tie_method), collapse="-"))
@@ -60,6 +79,19 @@ calc_distr_runs <- function(x_emb, # a embedded matrix from embed data
   return(wd)
 }
 
+
+#' calculate a timeseries of permutation entropy
+#' 
+#' @param x a dataframe time series with explicit gaps, needs a datetime and observation column, single ts
+#' @param tie_method method used to break ties
+#' @param D embedding dimension
+#' @param tau the embedding time delay
+#' @param use_weights should the weighted or unweighted PE be calculated?
+#' @param window_width how long should the time series be (the window is left aligned to the date)
+#' @param time_col an alternative column name if it's not datetime
+#' @returns a number
+#' 
+#' 
 calculate_PE_ts <- function(x, # a time series, explicit gaps
                             # x needs to have a datetime, and a observation column
                             # contain only a sinlge ts (one site/variable for example)
@@ -70,7 +102,7 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
                             window_width, 
                             time_col = 'datetime') {
   x1 <- x |> 
-    select(-any_of('datetime')) |> 
+    # select(-any_of(time_col)) |> 
     rename(datetime = all_of(time_col))
   
   if (sum(is.na(x$observation[1:window_width])) == window_width) {
@@ -80,6 +112,7 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
   if (length(x1$observation) == 0 | length(x1$datetime) == 0 ) {
     stop('No observation or datetime columns.')
   }
+  
   
   length_ts <- nrow(x)
   
@@ -91,8 +124,10 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
                                        D = D,
                                        tau = tau,
                                        use_weights = use_weights)) |> 
-    dplyr::mutate(datetime = x1$datetime[1:(length_ts - window_width + 1)]) |> 
-    purrr::set_names('PE', time_col)
+    dplyr::mutate(datetime = x1$datetime[1:(length_ts - window_width + 1)],
+                  variable = unique(x1$variable),
+                  site_id = unique(x1$site_id),
+                  depth_m = unique(x1$depth_m)) 
 
   return(PE)
 }
