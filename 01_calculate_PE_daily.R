@@ -74,24 +74,31 @@ PE_resampled <- targets_resample |>
 PE_resampled |> 
   mutate(depth_m = as_factor(depth_m)) |> 
   ggplot(aes(x=PE, fill = depth_m, y = after_stat(density))) +
-  geom_histogram(bins = 20, position = 'identity', alpha = 0.5) +
+  geom_histogram(bins = 15, position = 'identity', alpha = 0.5) +
   facet_grid(variable~site_id)
 
 #========================================#
 # how does PE vary over time?
 
-PE_ts <- calculate_PE_ts(x = targets,
-                         tie_method = 'first', 
-                         D = D,
-                         tau = tau, 
-                         use_weights = T, 
-                         window_width = window_length) 
+
+PE_ts <- targets |> 
+  group_by(site_id, variable, depth_m) |> 
+  group_split() |>
+  map_df(calculate_PE_ts, 
+         tie_method = 'first', 
+         D = D,
+         tau = tau, 
+         use_weights = T, 
+         window_width = window_length) |>
+  bind_rows()
 
 PE_ts |> 
+  filter(variable == 'Temp_C_mean') |> 
   mutate(doy = yday(datetime),
          year = year(datetime)) |> 
   ggplot(aes(x=doy, y=PE, colour = as.factor(year))) +
   geom_line() +
   geom_smooth(method = 'gam') +
   scale_colour_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
-  theme_bw()
+  theme_bw() +
+  facet_wrap(site_id~depth_m)
