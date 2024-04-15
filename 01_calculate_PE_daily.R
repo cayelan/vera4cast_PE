@@ -4,7 +4,7 @@ library(RCurl)
 
 source('R/get_targets.R')
 source('R/PE_functions.R')
-
+source('R/timeseries_functions.R')
 
 
 # ================= Get targets ===========================
