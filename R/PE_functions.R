@@ -17,19 +17,22 @@ calculate_PE <- function(x,
   x_emb <- embed_data(x = x, D = D, tau = tau)
   ## Remove any run containing NAs
   x_emb <- na.omit(x_emb)
-  if (length(x_emb) == 0) {
-    stop('All runs contain NAs')
+  if (nrow(x_emb) < 10) {
+    message('Not enough runs that dont contain NAs, min is 10')
+    return(NA)
+  } else {
+    # step 2 - calculate ordinal lengths
+    wd <- calc_distr_runs(x_emb, tie_method, use_weights)
+    
+    # step 3 - calculate PE
+    sum_weights <- -sum(wd * log2(wd))
+    denom <- log2(factorial(D))
+    
+    PE <- sum_weights/denom 
+    
+    return(PE)
   }
-  # step 2 - calculate ordinal lengths
-  wd <- calc_distr_runs(x_emb, tie_method, use_weights)
   
-  # step 3 - calculate PE
-  sum_weights <- -sum(wd * log2(wd))
-  denom <- log2(factorial(D))
-  
-  PE <- sum_weights/denom 
-  
-  return(PE)
 }
 
 #' generate embedded matrix
