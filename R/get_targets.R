@@ -1,8 +1,6 @@
-# Script to generate the observational time series from published EDI data
 
-get_targets_P1D <- function(fcre_file, 
-                            bvre_file # L1, then EDI
-                            ) {
+
+get_targets_P1D <- function(fcre_file, bvre_file ) {
   # Load FCR data
   fcre_df <- readr::read_csv(fcre_file, show_col_types = FALSE) |>
     dplyr::mutate(site_id = "fcre",
@@ -391,4 +389,55 @@ calc_strat_dates <- function(density_diff = 0.1,
   }
   
   return(na.omit(strat_dates))
+}
+
+
+get_targets_sample  <- function(infiles, start_date, end_date) {
+  
+  # list of standardised column names
+  standard_names <- c(site_id = "Reservoir", 
+                      depth_m = "Depth_m",
+                      datetime = "DateTime")
+  
+  final_df <- NULL
+  
+  for (i in 1:length(infiles)) {
+    
+    df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
+      filter(Site == 50) |> 
+      rename(any_of(standard_names))  |> 
+      mutate(site_id = ifelse(site_id == 'BVR', 'bvre', ifelse(site_id == 'FCR', 'fcre', site_id))) |> 
+      filter(site_id %in% c('fcre', 'bvre')) |> 
+      select(-Site)
+    
+    df_flags <- df |> 
+      select(any_of(c('datetime', 'site_id', 'depth_m')) | contains('Flag')) |> 
+      pivot_longer(cols = contains('Flag'),
+                   names_to = 'variable', 
+                   values_to = 'flag_value', 
+                   names_prefix = 'Flag_')
+    
+    df_observations <- df |> 
+      select(-contains('Flag')) |> 
+      pivot_longer(cols = -any_of(c('site_id', 'datetime', 'depth_m', 'Rep')),
+                   names_to = 'variable', 
+                   values_to = 'observation', 
+                   names_prefix = 'Flag_')
+    
+    df_long <- inner_join(df_observations, df_flags, 
+                          # by = c('site_id', 'datetime', 'depth_m', 'variable'),
+                          relationship = 'many-to-many') |> 
+      na.omit() |> 
+      filter(!flag_value %in% c(9, 5, 2)) |> 
+      select(-contains('flag')) |> 
+      group_by(pick(any_of(c('site_id', 'datetime', 'depth_m', 'variable')))) |> 
+      summarise(observation = mean(observation), .groups = 'drop')
+    
+    
+    # Combine with other dataframe
+    final_df <- bind_rows(final_df, df_long)
+    
+  }
+  
+ return(final_df) 
 }
