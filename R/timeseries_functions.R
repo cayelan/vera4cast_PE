@@ -14,7 +14,8 @@ resample <- function(ts, length.out = 100, n = 100) {
   for (i in 1:n) {
     start_index <- floor(runif(1, min=1, max=length_ts - length.out))
     
-    ts_subset <- data.frame(observation = ts[start_index:(start_index+length.out-1)]) |> 
+    ts_subset <- data.frame(observation = ts[start_index:(start_index+length.out-1)],
+                            index = seq(1, length.out, by=1)) |> 
       mutate(n = i)
     
     resample_list <- bind_rows(ts_subset, resample_list)
@@ -45,7 +46,7 @@ downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
   # if the data are weekly, will find a mean if there are multiple
   if (in.freq == 'weekly') {
     ts <- ts |> 
-      mutate(datetime = yearweek(datetime)) |> 
+      mutate(datetime = tsibble::yearweek(datetime)) |> 
       summarise(observation = mean(observation),
                 .by = any_of(c('datetime', 'depth_m', 'variable', 'site_id'))) |> 
       tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
@@ -58,7 +59,7 @@ downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
   if (str_detect(out.freq, pattern = 'week')) {
     ts_downsample <- 
       ts |> 
-      tsibble::index_by(year_week = ~ yearweek(.)) |> 
+      tsibble::index_by(year_week = ~ tsibble::yearweek(.)) |> 
       tsibble::group_by_key() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
                        observation_subset = nth(observation, 3),
@@ -73,7 +74,7 @@ downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
   
   if (str_detect(out.freq, pattern='month')) {
     ts_downsample <- ts |> 
-      tsibble::index_by(year_month = ~ yearmonth(.)) |> 
+      tsibble::index_by(year_month = ~ tsibble::yearmonth(.)) |> 
       tsibble::group_by_key() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
                        observation_subset = nth(observation, 3),
