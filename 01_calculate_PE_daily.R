@@ -28,7 +28,9 @@ temp_profiles <-
   filter(year(datetime) %in% c(2019,2020, 2021, 2022, 2023))
 
 
-strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profiles)
+strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profiles) |> 
+  mutate(start = as_date(start),
+         end = as_date(end))
 
 
 # =====================================================#
@@ -110,13 +112,16 @@ PE_ts |>
   # remove the values before after NA runs
   mutate(doy = yday(datetime),
          year = year(datetime)) |> 
-  ggplot(aes(x=doy, y=PE, colour = as.factor(year))) +
+  ggplot(aes(x=doy, y=PE, colour = as.factor(year), fill = as.factor(year))) +
   geom_line() +
-  geom_smooth(method = 'gam') +
+  geom_smooth(method = 'gam') +  
+  scale_fill_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
   scale_colour_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
   theme_bw() +
-  labs(title = 'DO_mgL_mean') +
-  facet_wrap(site_id~depth_m)
+  labs(title = 'DO_mgL_mean')+
+  # geom_vline(data = strat_dates, aes(xintercept = yday(start), colour = as_factor(year(start))), linewidth = 1, alpha = 0.6) +
+  # geom_vline(data = strat_dates, aes(xintercept = yday(end), colour = as_factor(year(end))), linewidth = 1, alpha = 0.6) +
+  facet_wrap(depth_m~site_id) 
 
 #============================================#
 
