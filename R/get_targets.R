@@ -166,7 +166,7 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
              depth_m = as.numeric(str_split_i(variable, "_", 3)), 
              depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
              variable = str_split_i(variable, "_", 1),
-             site_id = 'fcre') |>
+             site_id = 'bvre') |>
       full_join(standard_names, by = 'variable') |> 
       select(datetime, site_id, depth_m, observation, variable = variable_new)  
     
