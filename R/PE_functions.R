@@ -13,25 +13,35 @@ calculate_PE <- function(x,
                          tau = 1, # Embedding time delay (1)
                          use_weights = T) {
   
-  # step 1 - embed data, generate matrix
-  x_emb <- embed_data(x = x, D = D, tau = tau)
-  ## Remove any run containing NAs
-  x_emb <- na.omit(x_emb)
-  if (nrow(x_emb) < 10) {
-    message('Not enough runs that dont contain NAs, min is 10')
-    return(NA)
-  } else {
-    # step 2 - calculate ordinal lengths
-    wd <- calc_distr_runs(x_emb, tie_method, use_weights)
-    
-    # step 3 - calculate PE
-    sum_weights <- -sum(wd * log2(wd))
-    denom <- log2(factorial(D))
-    
-    PE <- sum_weights/denom 
-    
+  # add in test if the deltas are zero then returns 0
+  if (sum(x-lag(x), na.rm = T) == 0) {
+    PE <- 0
     return(PE)
+  } else {
+    
+    # step 1 - embed data, generate matrix
+    x_emb <- embed_data(x = x, D = D, tau = tau)
+    ## Remove any run containing NAs
+    x_emb <- na.omit(x_emb)
+    if (nrow(x_emb) < 10) {
+      message('Not enough runs that dont contain NAs, min is 10')
+      return(NA)
+    } else {
+      # step 2 - calculate ordinal lengths
+      wd <- calc_distr_runs(x_emb, tie_method, use_weights)
+      
+      # step 3 - calculate PE
+      sum_weights <- -sum(wd * log2(wd))
+      denom <- log2(factorial(D))
+      
+      PE <- sum_weights/denom 
+      
+      return(PE)
+    }
+    
   }
+  
+  
   
 }
 
@@ -66,7 +76,7 @@ embed_data <- function(x,
 calc_distr_runs <- function(x_emb, 
                             tie_method, 
                             use_weights 
-                            ) {
+) {
   if (use_weights == T) {
     words <- apply(x_emb, 1, function(i) paste(rank(i, ties.method = tie_method), collapse="-"))
     
@@ -111,7 +121,7 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
   if (sum(is.na(x$observation[1:window_width])) == window_width) {
     stop('the must be at least some non-NA values in the first window. Try removing the first run of NAs before.')
   }
-
+  
   if (length(x1$observation) == 0 | length(x1$datetime) == 0 ) {
     stop('No observation or datetime columns.')
   }
@@ -131,6 +141,6 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
                   variable = unique(x1$variable),
                   site_id = unique(x1$site_id),
                   depth_m = unique(x1$depth_m)) 
-
+  
   return(PE)
 }
