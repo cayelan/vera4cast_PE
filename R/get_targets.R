@@ -1,12 +1,22 @@
+#' get daily targets
+#' 
+#' @param fcre_file link to EDI data file for fcre
+#' @param bvre_file link to data file(s) for bvre, order EDI then L1
+#' @param method how should the P1D data be generated from the HF data, either subset or aggregate
+#' @return a targets dataframe in VERA format
 
-
-get_targets_P1D <- function(fcre_file, bvre_file ) {
+get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time = '12:00:00') {
+  
+  standard_names <- data.frame(variable_new = c('Temp_C_mean', 'SpCond_uScm_mean', 'Chla_ugL_mean', 'fDOM_QSU_mean'),
+                               variable = c('EXOTemp', 'EXOSpCond', 'EXOChla', 'EXOfDOM'))
+  
   # Load FCR data
   fcre_df <- readr::read_csv(fcre_file, show_col_types = FALSE) |>
     dplyr::mutate(site_id = "fcre",
                   DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
                   DateTime = lubridate::with_tz(DateTime, tzone = "UTC"),
-                  sampledate = as.Date(DateTime))
+                  sampledate = as.Date(DateTime)) |> 
+    dplyr::filter(Site == 50)
   
   if (length(bvre_file) == 2) {
     # Load bvre data
@@ -14,14 +24,16 @@ get_targets_P1D <- function(fcre_file, bvre_file ) {
       dplyr::mutate(site_id = "bvre",
                     DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
                     DateTime = lubridate::with_tz(DateTime, tzone = "UTC"),
-                    sampledate = as.Date(DateTime))
+                    sampledate = as.Date(DateTime))  |> 
+      dplyr::filter(Site == 50)
     
     bvre_historical <- readr::read_csv(bvre_file[2], show_col_types = FALSE) |>
       dplyr::mutate(site_id = "bvre",
                     DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
                     DateTime = lubridate::with_tz(DateTime, tzone = "UTC"),
                     sampledate = as.Date(DateTime)) |>
-      dplyr::rename(LvlDepth_m_13 = Depth_m_13)
+      dplyr::rename(LvlDepth_m_13 = Depth_m_13)  |> 
+      dplyr::filter(Site == 50)
     
     bvre_df <- dplyr::bind_rows(bvre_current, bvre_historical)
   } 
@@ -51,82 +63,156 @@ get_targets_P1D <- function(fcre_file, bvre_file ) {
     filter(n_samples < 144) |>
     filter(sampledate == Sys.Date() | n_samples < 144/2)
   
+  if (method == 'aggregate') {
+    # Format data to combine
+    # FCR
+    fcre_sum <- fcre_df |>
+      filter(!sampledate %in% fcre_remove_days$sampledate) |>  # filter for complete days
+      dplyr::group_by(sampledate, site_id) |>
+      dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1, na.rm = T),
+        Temp_C_mean = mean(EXOTemp_C_1, na.rm = T),
+        SpCond_uScm_mean = mean(EXOSpCond_uScm_1, na.rm = T),
+        Chla_ugL_mean = mean(EXOChla_ugL_1, na.rm = T),
+        fDOM_QSU_mean = mean(EXOfDOM_QSU_1, na.rm = T),
+        # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1, na.rm = T),
+        # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
+        .groups = 'drop')
+    
+    # bvre
+    bvre_sum <- bvre_df |>
+      filter(!sampledate %in% bvre_remove_days$sampledate) |> # filter for complete days
+      dplyr::group_by(sampledate, site_id) |> #daily mean
+      dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1.5, na.rm = T),
+        Temp_C_mean = mean(EXOTemp_C_1.5, na.rm = T),
+        SpCond_uScm_mean = mean(EXOSpCond_uScm_1.5, na.rm = T),
+        Chla_ugL_mean = mean(EXOChla_ugL_1.5, na.rm = T),
+        fDOM_QSU_mean = mean(EXOfDOM_QSU_1.5, na.rm = T),
+        # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1.5, na.rm = T),
+        # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
+        .groups = 'drop')
+    
+    
+    ## build DO for each site separately and then combine
+    fcre_DO <- fcre_df |>
+      filter(!sampledate %in% fcre_remove_days$sampledate) |>  # filter for complete days
+      select(DateTime, RDO_mgL_9_adjusted, EXODO_mgL_1) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(sampledate = as.Date(DateTime),
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             depth_m = ifelse(str_detect(variable, 'EXO'), 1.6, depth_m),
+             variable = 'DO_mgL_mean') |> 
+      summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
+      mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
+      select(datetime, depth_m, observation = obs_avg, variable)
+    
+    fcre_DO$site_id <- 'fcre'
+    
+    
+    bvre_DO <- bvre_df |>
+      filter(!sampledate %in% bvre_remove_days$sampledate) |> # filter for complete days
+      select(DateTime, RDO_mgL_13, EXODO_mgL_1.5) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(sampledate = as.Date(DateTime),
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
+             variable = 'DO_mgL_mean') |> 
+      summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
+      mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
+      select(datetime, depth_m, observation = obs_avg, variable, observation = obs_avg)
+    
+    bvre_DO$site_id <- 'bvre'
+    
+    
+    combined_DO <- bind_rows(fcre_DO, bvre_DO) |>
+      mutate(observation = ifelse(is.nan(observation), NA, observation))
+    
+    #depth is 1.5 at bvre and 1.6 and FCR
+    
+    #Combine all and format
+    targets_P1D <- fcre_sum |>
+      dplyr::bind_rows(bvre_sum) |>
+      dplyr::rename(datetime = sampledate) |>
+      tidyr::pivot_longer(cols = Temp_C_mean:fDOM_QSU_mean, names_to = "variable", values_to = "observation") |>
+      dplyr::mutate(depth_m = NA,
+                    depth_m = ifelse(site_id == "fcre", fcre_depths[1], depth_m),
+                    depth_m = ifelse(site_id == "bvre", bvre_depths[1], depth_m)) |>
+      dplyr::select(datetime, site_id, depth_m, observation, variable) |>
+      dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |>
+      bind_rows(combined_DO) # append DO data
+  }
   
-  # Format data to combine
-  # FCR
-  fcre_sum <- fcre_df |>
-    filter(!sampledate %in% fcre_remove_days$sampledate) |>  # filter for complete days
-    dplyr::group_by(sampledate, site_id) |>
-    dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1, na.rm = T),
-      Temp_C_mean = mean(EXOTemp_C_1, na.rm = T),
-      SpCond_uScm_mean = mean(EXOSpCond_uScm_1, na.rm = T),
-      Chla_ugL_mean = mean(EXOChla_ugL_1, na.rm = T),
-      fDOM_QSU_mean = mean(EXOfDOM_QSU_1, na.rm = T),
-      # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1, na.rm = T),
-      # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
-      .groups = 'drop')
-  
-  # bvre
-  bvre_sum <- bvre_df |>
-    filter(!sampledate %in% bvre_remove_days$sampledate) |> # filter for complete days
-    dplyr::group_by(sampledate, site_id) |> #daily mean
-    dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1.5, na.rm = T),
-      Temp_C_mean = mean(EXOTemp_C_1.5, na.rm = T),
-      SpCond_uScm_mean = mean(EXOSpCond_uScm_1.5, na.rm = T),
-      Chla_ugL_mean = mean(EXOChla_ugL_1.5, na.rm = T),
-      fDOM_QSU_mean = mean(EXOfDOM_QSU_1.5, na.rm = T),
-      # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1.5, na.rm = T),
-      # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
-      .groups = 'drop')
-  
-  
-  ## build DO for each site separately and then combine
-  fcre_DO <- fcre_df |>
-    filter(!sampledate %in% fcre_remove_days$sampledate) |>  # filter for complete days
-    select(DateTime, RDO_mgL_9_adjusted, EXODO_mgL_1) |>
-    pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
-    mutate(sampledate = as.Date(DateTime),
-           depth_m = as.numeric(str_split_i(variable, "_", 3)), 
-           depth_m = ifelse(str_detect(variable, 'EXO'), 1.6, depth_m),
-           variable = 'DO_mgL_mean') |> 
-    summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
-    mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
-    select(datetime, depth_m, observation = obs_avg, variable)
-  
-  fcre_DO$site_id <- 'fcre'
-  
-  
-  bvre_DO <- bvre_df |>
-    filter(!sampledate %in% bvre_remove_days$sampledate) |> # filter for complete days
-    select(DateTime, RDO_mgL_13, EXODO_mgL_1.5) |>
-    pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
-    mutate(sampledate = as.Date(DateTime),
-           depth_m = as.numeric(str_split_i(variable, "_", 3)), 
-           depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
-           variable = 'DO_mgL_mean') |> 
-    summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
-    mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
-    select(datetime, depth_m, observation = obs_avg, variable, observation = obs_avg)
-  
-  bvre_DO$site_id <- 'bvre'
-  
-  
-  combined_DO <- bind_rows(fcre_DO, bvre_DO) |>
-    mutate(observation = ifelse(is.nan(observation), NA, observation))
-  
-  #depth is 1.5 at bvre and 1.6 and FCR
-  
-  #Combine all and format
-  targets_P1D <- fcre_sum |>
-    dplyr::bind_rows(bvre_sum) |>
-    dplyr::rename(datetime = sampledate) |>
-    tidyr::pivot_longer(cols = Temp_C_mean:fDOM_QSU_mean, names_to = "variable", values_to = "observation") |>
-    dplyr::mutate(depth_m = NA,
-                  depth_m = ifelse(site_id == "fcre", fcre_depths[1], depth_m),
-                  depth_m = ifelse(site_id == "bvre", bvre_depths[1], depth_m)) |>
-    dplyr::select(datetime, site_id, depth_m, observation, variable) |>
-    dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |>
-    bind_rows(combined_DO) # append DO data
+  if (method == 'subset') {
+    # FCR
+    fcre_subset <- fcre_df |>
+      filter(!sampledate %in% fcre_remove_days$sampledate,  # filter for complete days
+             str_detect(DateTime, pattern = subset_time)) |> 
+      dplyr::select(any_of(c('DateTime', 'EXOTemp_C_1', 'EXOSpCond_uScm_1','EXOChla_ugL_1','EXOfDOM_QSU_1'))) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(datetime = DateTime,
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             depth_m = ifelse(str_detect(variable, 'EXO'), 1.6, depth_m),
+             variable = str_split_i(variable, "_", 1),
+             site_id = 'fcre') |>
+      full_join(standard_names, by = 'variable') |> 
+      select(datetime, site_id, depth_m, observation, variable = variable_new)  
+    
+    # bvre
+    bvre_subset <- bvre_df |>
+      filter(!sampledate %in% bvre_remove_days$sampledate,  # filter for complete days
+             str_detect(DateTime, pattern = subset_time)) |> 
+      dplyr::select(any_of(c('DateTime', 'EXOTemp_C_1.5', 'EXOSpCond_uScm_1.5','EXOChla_ugL_1.5','EXOfDOM_QSU_1.5'))) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(datetime = DateTime,
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
+             variable = str_split_i(variable, "_", 1),
+             site_id = 'fcre') |>
+      full_join(standard_names, by = 'variable') |> 
+      select(datetime, site_id, depth_m, observation, variable = variable_new)  
+    
+    
+    ## build DO for each site separately and then combine
+    fcre_DO_subset <- fcre_df |>
+      filter(!sampledate %in% fcre_remove_days$sampledate,  # filter for complete days
+             str_detect(DateTime, pattern = subset_time)) |> 
+      select(DateTime, RDO_mgL_9_adjusted, EXODO_mgL_1) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(sampledate = as.Date(DateTime),
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             depth_m = ifelse(str_detect(variable, 'EXO'), 1.6, depth_m),
+             variable = 'DO_mgL_mean') |> 
+      mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
+      select(datetime, depth_m, observation, variable)
+    
+    fcre_DO_subset$site_id <- 'fcre'
+    
+    
+    bvre_DO_subset <- bvre_df |>
+      filter(!sampledate %in% bvre_remove_days$sampledate,  # filter for complete days
+             str_detect(DateTime, pattern = subset_time)) |> 
+      select(DateTime, RDO_mgL_13, EXODO_mgL_1.5) |>
+      pivot_longer(-DateTime, names_to = 'variable', values_to = 'observation') |>
+      mutate(sampledate = as.Date(DateTime),
+             depth_m = as.numeric(str_split_i(variable, "_", 3)), 
+             # depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
+             variable = 'DO_mgL_mean') |> 
+      mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
+      select(datetime, depth_m, observation, variable)
+    
+    bvre_DO_subset$site_id <- 'bvre'
+    
+    
+    combined_DO <- bind_rows(fcre_DO_subset, bvre_DO_subset) |>
+      mutate(observation = ifelse(is.nan(observation), NA, observation))
+    
+
+    #Combine all and format
+    targets_P1D <- fcre_subset |>
+      dplyr::bind_rows(bvre_subset) |> 
+      dplyr::select(datetime, site_id, depth_m, observation, variable) |>
+      dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |>
+      bind_rows(combined_DO) # append DO data
+  } 
   return(targets_P1D)
 }
 
