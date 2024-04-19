@@ -20,8 +20,8 @@ targets_sample <- get_targets_sample(infiles = c(chem, secchi), start_date = 201
               names_from = variable,
               values_from = observation) |> 
   mutate(DIN_ugL = NH4_ugL + NO3NO2_ugL) |> 
-  select(-NH4_ugL, -NO3NO2_ugL) |> 
-  pivot_longer(SRP_ugL:DIN_ugL, 
+  # select(-NH4_ugL, -NO3NO2_ugL) |> 
+  pivot_longer(NH4_ugL:DIN_ugL, 
                names_to = 'variable', 
                values_to = 'observation') |> 
   filter(!is.na(observation)) |> 
@@ -51,7 +51,7 @@ targets_sample |>
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
   facet_wrap(~depth_m, ncol = 3) + theme(legend.position = 'top')+
-  scale_colour_viridis_d(option = 'C', name = 'site', end = 0.9) +
+  scale_colour_viridis_d(option = 'C', name = 'site', end = 0.8) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1))
 
 
@@ -69,26 +69,5 @@ targets_sample |>
   facet_grid(depth_m~variable) + theme(legend.position = 'top')+
   scale_y_continuous(expand = c(0,0), limits = c(0,1))
 
-
-targets_sample |> 
-  filter(site_id == 'bvre', 
-         variable == 'TN_ugL',
-         depth_m == 9) |> 
-  mutate(week = week(year_week), 
-         year = year(year_week)) |> 
-  filter(year %in% c(2021, 2022)) |> 
-  ggplot(aes(x=week, y= observation, colour = as_factor(year))) +
-  geom_line() +
-  geom_point()
-
-
-targets_sample |> 
-  filter(site_id == 'bvre', 
-         variable == 'TN_ugL',
-         depth_m == 9) |> 
-  mutate(week = week(year_week), 
-         year = year(year_week)) |> 
-  filter(year %in% c(2022)) |> 
-  summarise(calculate_PE(observation))
 
 #===============================================
