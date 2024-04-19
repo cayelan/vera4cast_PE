@@ -3,9 +3,10 @@
 #' @param ts a vector of data 
 #' @param length.out number - how long should the resampled timeseries be
 #' @param n number - how many times should the sampling occur
+#' @param doy vector of days associates to the ts (optional)
 #' @returns a dataframe 
 
-resample <- function(ts, length.out = 100, n = 100) {
+resample <- function(ts, length.out = 100, n = 100, doy = NA) {
   
   length_ts <- length(ts)
   
@@ -18,7 +19,14 @@ resample <- function(ts, length.out = 100, n = 100) {
                             index = seq(1, length.out, by=1)) |> 
       mutate(n = i)
     
-    resample_list <- bind_rows(ts_subset, resample_list)
+    if (is.na(doy[1])) {
+      resample_list <- bind_rows(ts_subset, resample_list)
+    } else {
+      ts_subset <- ts_subset |> 
+        mutate(doy = doy[start_index])
+      resample_list <- bind_rows(ts_subset, resample_list)
+    }
+    
     # print(i)
   }
   return(resample_list)
