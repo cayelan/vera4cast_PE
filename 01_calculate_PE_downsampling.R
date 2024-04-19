@@ -4,7 +4,7 @@ targets_weekly <- targets_interp |>
   group_split() |>
   map_df(downsample, 
          out.freq = 'weekly', 
-         method = 'aggregate') |>
+         method = 'sample') |>
   bind_rows()
 
 targets_weekly |>

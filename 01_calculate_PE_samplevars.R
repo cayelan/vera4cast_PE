@@ -16,7 +16,7 @@ chem <-  "https://pasta.lternet.edu/package/data/eml/edi/199/12/a33a5283120c56e9
 targets_sample <- get_targets_sample(infiles = c(chem, secchi), start_date = 2014, end_date = 2023) |> 
   filter((depth_m %in% c(0.1, 9) & variable %in% c('TN_ugL', 'TP_ugL', 'SRP_ugL', 'NH4_ugL', 'NO3NO2_ugL')) |
            variable == 'Secchi_m') |> 
-  pivot_wider(id_cols = c(site_id, datetime, depth_m),
+  pivot_wider(id_cols = c(site_id, datetime, depth_m, method),
               names_from = variable,
               values_from = observation) |> 
   mutate(DIN_ugL = NH4_ugL + NO3NO2_ugL) |> 
@@ -28,8 +28,8 @@ targets_sample <- get_targets_sample(infiles = c(chem, secchi), start_date = 201
   mutate(year_week = tsibble::yearweek(datetime),
          observation = as.numeric(observation)) |> 
   reframe(observation = mean(observation, na.rm = T),
-          .by = c(site_id, year_week, depth_m, variable)) |> 
-  tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
+          .by = c(site_id, year_week, depth_m, variable, method)) |> 
+  tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable", "method")),
                       index = "year_week") |>
   tsibble::fill_gaps() |> 
   filter(month(year_week) %in% 4:11, 
