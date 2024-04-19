@@ -7,7 +7,7 @@
 
 get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time = '12:00:00') {
   
-  standard_names <- data.frame(variable_new = c('Temp_C_mean', 'SpCond_uScm_mean', 'Chla_ugL_mean', 'fDOM_QSU_mean'),
+  standard_names <- data.frame(variable_new = c('Temp_C', 'SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
                                variable = c('EXOTemp', 'EXOSpCond', 'EXOChla', 'EXOfDOM'))
   
   # Load FCR data
@@ -70,10 +70,10 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
       filter(!sampledate %in% fcre_remove_days$sampledate) |>  # filter for complete days
       dplyr::group_by(sampledate, site_id) |>
       dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1, na.rm = T),
-        Temp_C_mean = mean(EXOTemp_C_1, na.rm = T),
-        SpCond_uScm_mean = mean(EXOSpCond_uScm_1, na.rm = T),
-        Chla_ugL_mean = mean(EXOChla_ugL_1, na.rm = T),
-        fDOM_QSU_mean = mean(EXOfDOM_QSU_1, na.rm = T),
+        Temp_C = mean(EXOTemp_C_1, na.rm = T),
+        SpCond_uScm = mean(EXOSpCond_uScm_1, na.rm = T),
+        Chla_ugL = mean(EXOChla_ugL_1, na.rm = T),
+        fDOM_QSU = mean(EXOfDOM_QSU_1, na.rm = T),
         # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1, na.rm = T),
         # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
         .groups = 'drop')
@@ -83,10 +83,10 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
       filter(!sampledate %in% bvre_remove_days$sampledate) |> # filter for complete days
       dplyr::group_by(sampledate, site_id) |> #daily mean
       dplyr::summarise(# Cond_uScm_mean = mean(EXOCond_uScm_1.5, na.rm = T),
-        Temp_C_mean = mean(EXOTemp_C_1.5, na.rm = T),
-        SpCond_uScm_mean = mean(EXOSpCond_uScm_1.5, na.rm = T),
-        Chla_ugL_mean = mean(EXOChla_ugL_1.5, na.rm = T),
-        fDOM_QSU_mean = mean(EXOfDOM_QSU_1.5, na.rm = T),
+        Temp_C = mean(EXOTemp_C_1.5, na.rm = T),
+        SpCond_uScm = mean(EXOSpCond_uScm_1.5, na.rm = T),
+        Chla_ugL = mean(EXOChla_ugL_1.5, na.rm = T),
+        fDOM_QSU = mean(EXOfDOM_QSU_1.5, na.rm = T),
         # Turbidity_FNU_mean = mean(EXOTurbidity_FNU_1.5, na.rm = T),
         # Bloom_binary_mean = as.numeric(mean(Chla_ugL_mean, na.rm = T)>20), 
         .groups = 'drop')
@@ -100,7 +100,7 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
       mutate(sampledate = as.Date(DateTime),
              depth_m = as.numeric(str_split_i(variable, "_", 3)), 
              depth_m = ifelse(str_detect(variable, 'EXO'), 1.6, depth_m),
-             variable = 'DO_mgL_mean') |> 
+             variable = 'DO_mgL') |> 
       summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
       mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
       select(datetime, depth_m, observation = obs_avg, variable)
@@ -115,7 +115,7 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
       mutate(sampledate = as.Date(DateTime),
              depth_m = as.numeric(str_split_i(variable, "_", 3)), 
              depth_m = ifelse(str_detect(variable, 'EXO'), 1.5, depth_m),
-             variable = 'DO_mgL_mean') |> 
+             variable = 'DO_mgL') |> 
       summarise(obs_avg = mean(observation, na.rm = TRUE), .by = c('sampledate', 'variable', 'depth_m')) |>
       mutate(datetime=ymd_hms(paste0(sampledate,"","00:00:00"))) |>
       select(datetime, depth_m, observation = obs_avg, variable, observation = obs_avg)
@@ -138,7 +138,9 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
                     depth_m = ifelse(site_id == "bvre", bvre_depths[1], depth_m)) |>
       dplyr::select(datetime, site_id, depth_m, observation, variable) |>
       dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |>
-      bind_rows(combined_DO) # append DO data
+      bind_rows(combined_DO) |>  # append DO data 
+      mutate(method = method)
+      
   }
   
   if (method == 'subset') {
@@ -211,7 +213,8 @@ get_targets_P1D <- function(fcre_file, bvre_file, method = 'subet', subset_time 
       dplyr::bind_rows(bvre_subset) |> 
       dplyr::select(datetime, site_id, depth_m, observation, variable) |>
       dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |>
-      bind_rows(combined_DO) # append DO data
+      bind_rows(combined_DO) |> # append DO data 
+      mutate(method = method)
   } 
   return(targets_P1D)
 }
@@ -521,7 +524,7 @@ get_targets_sample  <- function(infiles, start_date, end_date) {
     
     
     # Combine with other dataframe
-    final_df <- bind_rows(final_df, df_long)
+    final_df <- bind_rows(final_df, df_long) |> mutate(method = 'sample')
     
   }
   
