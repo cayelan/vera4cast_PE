@@ -37,10 +37,10 @@ resample <- function(ts, length.out = 100, n = 100, doy = NA) {
 #' @param ts a dataframe of timeseries data (single site-variable-depth combination), needs a datetime column
 #' @param out.freq string - what should the temporal frequency of the output be (weekly, monthly)
 #' @param in.freq string - what is the temporal frequency of the input - should be regular timestep
-#' @param method string - how should the downsampling occur - aggregate or subset
+#' @param method string - how should the downsampling occur - aggregate or sample
 #' @returns a dataframe
 
-downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
+downsample <- function(ts, in.freq = 'daily', out.freq, method = 'sample') {
   
   # make in to a tsibble object with explicit gaps
   if (in.freq == 'daily') {
@@ -70,14 +70,15 @@ downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
       tsibble::index_by(year_week = ~ tsibble::yearweek(.)) |> 
       tsibble::group_by_key() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
-                       observation_subset = nth(observation, 3),
+                       observation_sample = nth(observation, 3),
                        n = n()) |> 
       dplyr::filter(n >= 4) |> 
       as_tibble()  |> 
-      pivot_longer(cols = observation_aggregate:observation_subset,
+      pivot_longer(cols = observation_aggregate:observation_sample,
                    values_to='observation', names_prefix = 'observation_') |> 
       filter(name == method) |> 
-      select(any_of(c("year_week", "observation", "site_id", "depth_m", "variable")))
+      rename(method = name) |> 
+      select(any_of(c("year_week", "observation", "site_id", "depth_m", "variable", "method")))
   }
   
   if (str_detect(out.freq, pattern='month')) {
@@ -85,14 +86,14 @@ downsample <- function(ts, in.freq = 'daily', out.freq, method = 'subset') {
       tsibble::index_by(year_month = ~ tsibble::yearmonth(.)) |> 
       tsibble::group_by_key() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
-                       observation_subset = nth(observation, 3),
+                       observation_sample = nth(observation, 3),
                        n = n()) |> 
       # dplyr::filter(n >= 20) |> 
       as_tibble()  |> 
-      pivot_longer(cols = observation_aggregate:observation_subset,
+      pivot_longer(cols = observation_aggregate:observation_sample,
                    values_to='observation', names_prefix = 'observation_') |> 
-      filter(name == method) |> 
-      select(any_of(c("year_month", "observation", "site_id", "depth_m", "variable")))
+      rename(method = name) |> 
+      select(any_of(c("year_week", "observation", "site_id", "depth_m", "variable", "method")))
   }
   
   return(ts_downsample)
