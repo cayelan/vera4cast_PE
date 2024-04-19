@@ -18,7 +18,7 @@ fcre_L1 <- 'none'
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
 
-targets <- get_targets_P1D(fcre_file = fcre_EDI, bvre_file = c(bvre_L1, bvre_EDI)) |> 
+targets_P1D <- get_targets_P1D(fcre_file = fcre_EDI, bvre_file = c(bvre_L1, bvre_EDI), method = 'subset') |> 
   filter(year(datetime) %in% c(2019,2020, 2021, 2022, 2023))
 
 # Get temperature profiles
@@ -46,7 +46,7 @@ resample_n <- 100 # how many samples? for the resampled PE
 
 # Summarise PE for full time series ---------------------------------------
 # Summaries of PE by variable, site and depth
-PE_byvar <- targets |>
+PE_byvar <- targets_P1D |>
   group_by(depth_m, variable, site_id) |> 
   summarise(PE = calculate_PE(observation)) 
 
@@ -64,21 +64,22 @@ PE_byvar |>
 # Daily dataset resampling ------------------------------------------------
 # Resample the time series to calculate the PE on subsets of the data to generate a distribution
 targets_interp <-
-  targets |>
+  targets_P1D |>
   na.omit() |> 
   mutate(datetime = as_date(datetime)) |> 
   tsibble::as_tsibble(index = datetime, key = c(variable, site_id, depth_m)) |> 
   tsibble::fill_gaps(.full = FALSE) |> 
   as_tibble() |> 
-  mutate(observation = imputeTS::na_interpolation(observation, 'linear', maxgap = 10, rule = 1))
+  mutate(observation = imputeTS::na_interpolation(observation, 'linear', maxgap = 7, rule = 1))
 
 targets_resample <- targets_interp |>
   arrange(variable, depth_m, site_id, datetime) |> 
+  mutate(doy = yday(datetime)) |> 
   reframe(.by = c(variable, site_id, depth_m),
-          resample(ts = observation, length.out = 100, n = 100))
+          resample(ts = observation, doy = doy, length.out = 100, n = 500))
 
 PE_resampled <- targets_resample |> 
-  group_by(n, site_id, variable, depth_m) |> 
+  group_by(n, site_id, variable, depth_m, doy) |> 
   summarise(PE = calculate_PE(observation), .groups = 'drop')
 
 PE_resampled |> 
@@ -91,6 +92,11 @@ PE_resampled |>
   scale_colour_viridis_d(option = 'C', name = 'Depth_m') +
   theme_bw()
 
+
+PE_resampled |> filter(depth_m == 1.5, site_id == 'bvre') |> 
+  ggplot(aes(y=PE, x = doy, colour = variable)) +
+  geom_point() +
+  facet_wrap(~variable)
 #========================================#
 
 # Time series of PE ---------------------------------------
@@ -108,7 +114,7 @@ PE_ts <- targets_interp |>
   bind_rows()
 
 PE_ts |> 
-  filter(variable == 'DO_mgL_mean') |> 
+  filter(variable == 'DO_mgL') |> 
   # remove the values before after NA runs
   mutate(doy = yday(datetime),
          year = year(datetime)) |> 
@@ -118,7 +124,7 @@ PE_ts |>
   scale_fill_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
   scale_colour_viridis_d(name = '', option = 'magma', begin = 0.9, end = 0) +
   theme_bw() +
-  labs(title = 'DO_mgL_mean')+
+  labs(title = 'DO_mgL')+
   # geom_vline(data = strat_dates, aes(xintercept = yday(start), colour = as_factor(year(start))), linewidth = 1, alpha = 0.6) +
   # geom_vline(data = strat_dates, aes(xintercept = yday(end), colour = as_factor(year(end))), linewidth = 1, alpha = 0.6) +
   facet_wrap(depth_m~site_id) 
