@@ -75,12 +75,15 @@ downsample <- function(ts,
              hour = as_datetime(paste0(as_date(datetime), ' ', hour(datetime), ':00:00'))) |> 
       tsibble::index_by(hour) |> 
       tsibble::group_by_key() |> 
-      na.omit() |> 
+      # na.omit() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
                        observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
                        n = n(),
-                       distance = min(abs(as.numeric(datetime - target, 'minutes')))) |> 
-      dplyr::filter((method == 'aggregate' & n > 3) | (method == 'sample' & distance <= max_distance * 10)) |> # removes if there are less than 3 obs in any one hour
+                       distance = min(abs(as.numeric(datetime - target)))) |> 
+      dplyr::mutate(observation_aggregate = ifelse(method == 'aggregate' & n > 3,
+                                                   observation_aggregate, NA),
+                    observation_sample = ifelse(method == 'sample' & distance <= max_distance * 10,
+                                                observation_sample, NA)) |> # removes if there are less than 3 obs in any one hour
       as_tibble()  |> 
       pivot_longer(cols = observation_aggregate:observation_sample,
                    values_to='observation', names_prefix = 'observation_') |> 
@@ -98,12 +101,15 @@ downsample <- function(ts,
              date = as_date(datetime)) |> 
       tsibble::index_by(date) |> 
       tsibble::group_by_key() |> 
-      na.omit() |> 
+      # na.omit() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
                        observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
                        n = n(),
                        distance = min(abs(as.numeric(datetime - target, 'hours')))) |> 
-      dplyr::filter((method == 'aggregate' & n > 6*24/2) | (method == 'sample' & distance <= max_distance)) |> # removes if there are less than 3 obs in any one hour
+      dplyr::mutate(observation_aggregate = ifelse(method == 'aggregate' & n > 6*24/2,
+                                                   observation_aggregate, NA),
+                    observation_sample = ifelse(method == 'sample' & distance <= max_distance,
+                                                observation_sample, NA)) |> 
       as_tibble()  |> 
       pivot_longer(cols = observation_aggregate:observation_sample,
                    values_to='observation', names_prefix = 'observation_') |> 
