@@ -39,18 +39,19 @@ get_targets <- function(infiles) {
                           # by = c('site_id', 'datetime', 'depth_m', 'variable'),
                           relationship = 'many-to-many') |> 
       na.omit() |> 
-      filter(!flag_value %in% c(9, 5, 2, 1, 5, 3)) |> 
+      filter(!flag_value %in% c(9, 7, 2, 1, 5, 3)) |> 
       select(-contains('flag')) |> 
       mutate(depth_m = as.numeric(str_split_i(variable, "_", 3)), 
              depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'fcre', 1.6, 
-                              ifelse(str_detect(variable, 'EXO') & site_id == 'bvre', 1.5, depth_m))) |> 
+                              ifelse(str_detect(variable, 'EXO') & site_id == 'bvre', 1.5, depth_m)),
+             variable = str_split_i(variable, "\\.", 1)) |> 
       full_join(standard_names) |> 
       mutate(variable = variable_new) |> 
       select(-variable_new)
     
     # get DO
     df_DO <- df |>
-      select(datetime, site_id, any_of(c('RDO_mgL_9_adjusted', 'RDO_mgL_13', 'EXODO_mgL_1'))) |>
+      select(datetime, site_id, any_of(c('RDO_mgL_9_adjusted', 'RDO_mgL_13', 'EXODO_mgL_1', 'EXODO_mgL_1.5'))) |>
       pivot_longer(cols = contains('DO'), names_to = 'variable', values_to = 'observation') |>
       mutate(depth_m = as.numeric(str_split_i(variable, "_", 3)), 
              depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'fcre', 1.6, 
