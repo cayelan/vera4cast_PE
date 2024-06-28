@@ -81,6 +81,8 @@ calc_distr_runs <- function(x_emb,
     words <- apply(x_emb, 1, function(i) paste(rank(i, ties.method = tie_method), collapse="-"))
     
     weights <- apply(x_emb, 1, function(i) var(i))
+    # replace any zero weights with a very small number 
+    weights[weights == 0] <- 10e-10
     wd <- aggregate(weights, list(words), sum)$x / sum(weights)
   }
   
