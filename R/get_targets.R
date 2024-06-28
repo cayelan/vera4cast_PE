@@ -65,7 +65,8 @@ get_targets <- function(infiles) {
       dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
       tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
                           index = "datetime") |>
-      tsibble::fill_gaps() 
+      tsibble::fill_gaps() |> 
+      as_tibble()
     
     
     targets <- bind_rows(targets, df_all) 
