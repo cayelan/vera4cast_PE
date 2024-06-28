@@ -35,65 +35,109 @@ resample <- function(ts, length.out = 100, n = 100, doy = NA) {
 #' Downsample timeseries
 #' 
 #' @param ts a dataframe of timeseries data (single site-variable-depth combination), needs a datetime column
-#' @param out.freq string - what should the temporal frequency of the output be (weekly, monthly)
+#' @param out_freq string - what should the temporal frequency of the output be (weekly, monthly)
 #' @param in.freq string - what is the temporal frequency of the input - should be regular timestep
 #' @param method string - how should the downsampling occur - aggregate or sample
 #' @returns a dataframe
 
-downsample <- function(ts, in.freq = 'daily', out.freq, method = 'sample') {
+downsample <- function(ts, 
+                       in_freq = 'raw',
+                       out_freq = 'daily', 
+                       target_out = '12:00:00',
+                       max_distance = NA,
+                       method = 'sample') {
   
-  # make in to a tsibble object with explicit gaps
-  if (in.freq == 'daily') {
-    ts <- ts |> 
-      mutate(datetime = as_date(datetime)) |> 
-      tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
-                          index = "datetime") |>
-      tsibble::fill_gaps() 
-  }
+  ts <- ts |> 
+    tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
+                      index = "datetime") |>
+    tsibble::fill_gaps() 
   
-  # if the data are weekly, will find a mean if there are multiple
-  if (in.freq == 'weekly') {
-    ts <- ts |> 
-      mutate(datetime = tsibble::yearweek(datetime)) |> 
-      summarise(observation = mean(observation),
-                .by = any_of(c('datetime', 'depth_m', 'variable', 'site_id'))) |> 
-      tsibble::as_tsibble(key = any_of(c("site_id", "depth_m", "variable")),
-                          index = "datetime") |>
-      tsibble::fill_gaps()
+  if (method == 'aggregate') {
+    if (out_freq == 'hourly') {
+      target_out <- '00:00'
+    }
+    
+    if (out_freq == 'daily') {
+      target_out <- '12:00:00'
+    }
+    
+    if (out_freq == 'weekly') {
+      target_out <- '1'
+    }
   }
   
   
   # Do the downsampling
-  if (str_detect(out.freq, pattern = 'week')) {
+  if (str_detect(out_freq, pattern = 'hour')) {
     ts_downsample <- 
       ts |> 
-      tsibble::index_by(year_week = ~ tsibble::yearweek(.)) |> 
+      mutate(target = as_datetime(paste0(as_date(datetime), ' ',hour(datetime),':', target_out)), 
+             hour = as_datetime(paste0(as_date(datetime), ' ', hour(datetime), ':00:00'))) |> 
+      tsibble::index_by(hour) |> 
       tsibble::group_by_key() |> 
+      na.omit() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
-                       observation_sample = nth(observation, 3),
-                       n = n()) |> 
-      dplyr::filter(n >= 4) |> 
+                       observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
+                       n = n(),
+                       distance = min(abs(as.numeric(datetime - target, 'minutes')))) |> 
+      dplyr::filter((method == 'aggregate' & n > 3) | (method == 'sample' & distance <= max_distance * 10)) |> # removes if there are less than 3 obs in any one hour
+      as_tibble()  |> 
+      pivot_longer(cols = observation_aggregate:observation_sample,
+                   values_to='observation', names_prefix = 'observation_') |> 
+      filter(name == method) |> 
+      rename(method = name,
+             datetime = hour) |> 
+      select(any_of(c("datetime", "observation", "site_id", "depth_m", "variable", "method")))
+  }
+  
+  
+  if (str_detect(out_freq, pattern = 'daily')) {
+    ts_downsample <- 
+      ts |> 
+      mutate(target = as_datetime(paste0(as_date(datetime), ' ', target_out)), 
+             date = as_date(datetime)) |> 
+      tsibble::index_by(date) |> 
+      tsibble::group_by_key() |> 
+      na.omit() |> 
+      dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
+                       observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
+                       n = n(),
+                       distance = min(abs(as.numeric(datetime - target, 'hours')))) |> 
+      dplyr::filter((method == 'aggregate' & n > 6*24/2) | (method == 'sample' & distance <= max_distance)) |> # removes if there are less than 3 obs in any one hour
       as_tibble()  |> 
       pivot_longer(cols = observation_aggregate:observation_sample,
                    values_to='observation', names_prefix = 'observation_') |> 
       filter(name == method) |> 
       rename(method = name) |> 
-      select(any_of(c("year_week", "observation", "site_id", "depth_m", "variable", "method")))
+      select(any_of(c("date", "observation", "site_id", "depth_m", "variable", "method")))
   }
   
-  if (str_detect(out.freq, pattern='month')) {
-    ts_downsample <- ts |> 
-      tsibble::index_by(year_month = ~ tsibble::yearmonth(.)) |> 
-      tsibble::group_by_key() |> 
-      dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
-                       observation_sample = nth(observation, 3),
-                       n = n()) |> 
-      # dplyr::filter(n >= 20) |> 
-      as_tibble()  |> 
-      pivot_longer(cols = observation_aggregate:observation_sample,
-                   values_to='observation', names_prefix = 'observation_') |> 
-      rename(method = name) |> 
-      select(any_of(c("year_week", "observation", "site_id", "depth_m", "variable", "method")))
+  
+  
+  if (str_detect(out_freq, pattern = 'week')) {
+    # ts |> 
+    #   mutate(target = as_datetime(paste0(as_date(datetime), ' ', target_out)), 
+    #          year_week = tsibble::yearweek(datetime),
+    #          day = wday(datetime),
+    #          week_day_year = paste0(year_week, ' ', day)) |> 
+    #   tsibble::index_by(date) |> 
+    #   tsibble::group_by_key() |> 
+    #   na.omit() |> 
+    #   dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
+    #                    observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
+    #                    n = n(),
+    #                    distance = min(abs(as.numeric(datetime - target, 'hours')))) |> 
+    #   dplyr::filter((method == 'aggregate' & n > 6*24/2) | (method == 'sample' & distance <= max_distance)) |> # removes if there are less than 3 obs in any one hour
+    #   as_tibble()  |> 
+    #   pivot_longer(cols = observation_aggregate:observation_sample,
+    #                values_to='observation', names_prefix = 'observation_') |> 
+    #   filter(name == method) |> 
+    #   rename(method = name) |> 
+    #   select(any_of(c("date", "observation", "site_id", "depth_m", "variable", "method")))
+
+    stop('Havent figured weekly out yet. Do daily or hourly instead')
+    
+
   }
   
   return(ts_downsample)
