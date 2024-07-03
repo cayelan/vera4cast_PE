@@ -11,10 +11,28 @@ calculate_PE <- function(x,
                          tie_method = 'first',
                          D = 3, # Embedding dimension (3)
                          tau = 1, # Embedding time delay (1)
-                         use_weights = T) {
+                         use_weights = T,
+                         ignore_gaps = T,
+                         max_missing = 0.1,
+                         bootstrap_CI = F,
+                         CI = 0.95,
+                         bootstrap_n = 1000) {
+  # figure out how many continuous missing there are
+  x_missing <- data.frame(values = rle(is.na(x))$values,
+                          lengths = rle(is.na(x))$lengths) |> 
+    filter(values == T)
+  
+  if (nrow(x_missing) > 0 & !ignore_gaps) {
+    if (sum(x_missing$lengths) > max_missing * length(x) | max(x_missing$lengths) > 10) {
+      message(paste0('Theres too many NAs. Currently more than ', 100*max_missing, '% missing or > 10 missing consecutively.'))
+      return(NA)
+    }  
+  }
+  
+  
   
   # add in test if the deltas are zero then returns 0
-  if (sum(x-lag(x), na.rm = T) == 0) {
+  if (sum(abs(x-lag(x)), na.rm = T) == 0) {
     PE <- 0
     return(PE)
   } else {
@@ -36,7 +54,16 @@ calculate_PE <- function(x,
       
       PE <- sum_weights/denom 
       
-      return(PE)
+      if (bootstrap_CI) {
+        PE_confint <- calculate_PE_CI(PE, D, tau, tie_method, words, weights, n = bootstrap_n, CI = CI)
+        
+        return(c(PE=PE, PE_confint))
+        
+      }else {
+        return(PE)
+      }
+      
+      
     }
     
   }
@@ -145,4 +172,235 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
                   depth_m = unique(x1$depth_m)) 
   
   return(PE)
+}
+
+#' calculate permutation entropy confidence intervals
+#' @source Traversaro, F., & O. Redelico, F. (2018). Confidence intervals and hypothesis testing for the Permutation Entropy with an application to epilepsy. Communications in Nonlinear Science and Numerical Simulation, 57, 388–401. https://doi.org/10.1016/j.cnsns.2017.10.013
+#' 
+#' @param PE a PE calculated from a time series
+#' @param tie_method method used to break ties
+#' @param D embedding dimension
+#' @param tau the embedding time delay
+#' @param words the sequences from the observed time series
+#' @param weights calculated weights from the observed time series
+#' @param n how many bootstraps should there be
+#' @param CI what confidence level should be output
+#' @returns a named vector
+#' 
+calculate_PE_CI <- function(PE, 
+                            D, 
+                            tau, 
+                            tie_method,
+                            words, 
+                            weights, 
+                            n = 1000, 
+                            CI = 0.95) {
+  
+  # what are the possible observed sequences based on the D and tau selected?
+  all_perm <- perm(c(1:D))
+  
+  # Generate an empty matrix with columns and rows equal to possible per
+  transitions <- matrix(NA, nrow = length(all_perm), ncol = length(all_perm))
+  # Naming rows
+  rownames(transitions) <- all_perm
+  # Naming columns
+  colnames(transitions) <- all_perm
+  
+  # at what rate do different motifs follow each other
+  for (i in 1:length(all_perm)) {
+    ni <- length(which(words == all_perm[i]))
+    for (j in 1:length(all_perm)) {
+      # Goes from i to j
+      index <- which(words == all_perm[i] & lead(words) == all_perm[j])
+      transitions[i,j] <- round(length(index)/ni, 3)
+    }
+    
+  }
+  # transitions
+  # Bootstrap the permutation entropy
+  # 1. Initial state, based on observed probabilities
+  
+  # observed probabilities of each of the sequences
+  pni <- matrix(nrow = length(all_perm), ncol = 1)
+  colnames(pni) <- 'prob'
+  rownames(pni) <- all_perm
+  
+  for (i in 1:length(all_perm)) {
+    ni <- length(which(words == all_perm[i]))
+    pni[i] <- ni/length(words)
+  }
+  # pni
+  
+  
+  PE_b <- NULL
+  B <- n # how many bootstraps
+  for (b in 1:B) {
+    
+    s <- vector(length = length(words), mode = 'numeric')
+    
+    # choosing a starting sequence based on their occurrence
+    s[1] <- sample(all_perm, size = 1, replace = T, prob=pni)
+    
+    # for each of the next words...
+    for (i in 2:length(words)) {
+      
+      #extract the probability of moving from sequence i to j 
+      pij <- transitions[which(rownames(transitions) == s[i-1]),]
+      
+      # select the next in the sequence based on these probabilities
+      s[i] <- sample(all_perm, size = 1, replace = T, prob=pij)  
+    }
+    # using this new words list aggregate and apply the weightings
+    wd <- aggregate(weights, list(s), sum)$x / sum(weights)
+    
+    # wd <- table(s)/nrow(x_emb)
+    
+    # calculate PE
+    sum_weights <- -sum(wd * log2(wd))
+    denom <- log2(factorial(D))
+    
+    PE_b[b] <- sum_weights/denom 
+    
+  }
+  
+  # calculate the confidence intervals
+  mean_PE_b <- mean(PE_b)
+  
+  PE_b_bias <- sort(mean_PE_b - PE_b)
+  
+  alpha <- 1 - CI
+  
+  lb_index <- alpha/2 * B
+  ub_index <- (1- (alpha/2)) * B
+  
+  quantile_lower <- max(2*PE - mean_PE_b + PE_b_bias[lb_index], 0)
+  quantile_upper <- min(2*PE - mean_PE_b + PE_b_bias[ub_index], 1)
+  
+  confidence_int <- c(quantile_lower, quantile_upper)
+  names(confidence_int) <- c(paste0('quantile_', 100*(alpha/2)),
+                             paste0('quantile_', 100*(1- alpha/2)))
+  return(confidence_int)
+}
+
+#' calculate permutation entropy
+#' 
+#' @param PE a PE calculated from a time series
+#' @param tie_method method used to break ties
+#' @param D embedding dimension
+#' @param tau the embedding time delay
+#' @param words the sequences from the observed time series
+#' @param weights calculated weights from the observed time series
+#' @param n how many bootstraps should there be
+#' @param CI what confidence level should be output
+#' @returns a named vector
+#' 
+calculate_PE_CI <- function(PE, 
+                            D, 
+                            tau, 
+                            tie_method,
+                            words, 
+                            weights, 
+                            n = 1000, 
+                            CI = 0.95) {
+  
+  # what are the possible observed sequences based on the D and tau selected?
+  all_perm <- perm(c(1:D))
+  
+  # Generate an empty matrix with columns and rows equal to possible per
+  transitions <- matrix(NA, nrow = length(all_perm), ncol = length(all_perm))
+  # Naming rows
+  rownames(transitions) <- all_perm
+  # Naming columns
+  colnames(transitions) <- all_perm
+  
+  # at what rate do different motifs follow each other
+  for (i in 1:length(all_perm)) {
+    ni <- length(which(words == all_perm[i]))
+    for (j in 1:length(all_perm)) {
+      # Goes from i to j
+      index <- which(words == all_perm[i] & lead(words) == all_perm[j])
+      transitions[i,j] <- round(length(index)/ni, 3)
+    }
+    
+  }
+  # transitions
+  # Bootstrap the permutation entropy
+  # 1. Initial state, based on observed probabilities
+  
+  # observed probabilities of each of the sequences
+  pni <- matrix(nrow = length(all_perm), ncol = 1)
+  colnames(pni) <- 'prob'
+  rownames(pni) <- all_perm
+  
+  for (i in 1:length(all_perm)) {
+    ni <- length(which(words == all_perm[i]))
+    pni[i] <- ni/length(words)
+  }
+  # pni
+  
+  
+  PE_b <- NULL
+  B <- n # how many bootstraps
+  for (b in 1:B) {
+    
+    s <- vector(length = length(words), mode = 'numeric')
+    
+    # choosing a starting sequence based on their occurrence
+    s[1] <- sample(all_perm, size = 1, replace = T, prob=pni)
+    
+    # for each of the next words...
+    for (i in 2:length(words)) {
+      
+      #extract the probability of moving from sequence i to j 
+      pij <- transitions[which(rownames(transitions) == s[i-1]),]
+      
+      # select the next in the sequence based on these probabilities
+      s[i] <- sample(all_perm, size = 1, replace = T, prob=pij)  
+    }
+    # using this new words list aggregate and apply the weightings
+    wd <- aggregate(weights, list(s), sum)$x / sum(weights)
+    
+    # wd <- table(s)/nrow(x_emb)
+    
+    # calculate PE
+    sum_weights <- -sum(wd * log2(wd))
+    denom <- log2(factorial(D))
+    
+    PE_b[b] <- sum_weights/denom 
+    
+  }
+  
+  # calculate the confidence intervals
+  mean_PE_b <- mean(PE_b)
+  
+  PE_b_bias <- sort(mean_PE_b - PE_b)
+  
+  alpha <- 1 - CI
+  
+  lb_index <- alpha/2 * B
+  ub_index <- (1- (alpha/2)) * B
+  
+  quantile_lower <- max(2*PE - mean_PE_b + PE_b_bias[lb_index], 0)
+  quantile_upper <- min(2*PE - mean_PE_b + PE_b_bias[ub_index], 1)
+  
+  confidence_int <- c(quantile_lower, quantile_upper)
+  names(confidence_int) <- c(paste0('quantile_', 100*(alpha/2)),
+                             paste0('quantile_', 100*(1- alpha/2)))
+  return(confidence_int)
+}
+
+
+
+#' function to determine all word permutations
+#' 
+#' @param x a vector of possible values
+#' @returns a vector of all possible permutations of x, as - seperated values
+perm <- function(x) {
+  n <- length(x)
+  if (n == 1) x
+  else {
+    permutations <- NULL
+    for (i in 1:n) permutations <- rbind(permutations, paste0(x[i], '-', perm(x[-i])))
+    as.vector(permutations)
+  }
 }
