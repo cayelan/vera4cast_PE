@@ -1,9 +1,10 @@
 #' get daily targets
 #' 
 #' @param infiles vector of EDI data files
+#' @param interpolate should interpolation be carried out
 #' @return a targets dataframe in VERA format
 
-get_targets <- function(infiles) {
+get_targets <- function(infiles, interpolate = T, maxgap = 12) {
   
   
   standard_names <- data.frame(variable_new = c('Temp_C','SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
@@ -72,6 +73,14 @@ get_targets <- function(infiles) {
     
     targets <- bind_rows(targets, df_all) 
   }
+  
+  if (interpolate == T) {
+    test <- targets |> 
+      group_by(site_id, depth_m, variable) |> 
+      arrange(datetime) |> 
+      mutate(observation = imputeTS::na_interpolation(observation, 'linear', maxgap = maxgap, rule = 1))
+  }
+  
   return(targets)
 }
 
