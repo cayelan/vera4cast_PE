@@ -59,9 +59,23 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
                               ifelse(str_detect(variable, 'EXO') & site_id == 'bvre', 1.5, depth_m)),
              variable = 'DO_mgL') 
     
+    #get bottom temp
+    df_bottomT <- df |>
+      select(datetime, site_id, starts_with(c('ThermistorTemp', 'Flag_ThermistorTemp'))) |>
+      pivot_longer(cols = contains('Thermistor'), names_to = 'variable', values_to = 'observation') |>
+      mutate(depth_m = str_split_i(variable, "_", -1),
+             depth_m = as.numeric(ifelse(depth_m == 'surface', 0, depth_m))) |> 
+      filter(depth_m == max(depth_m)) |> 
+      pivot_wider(names_from = variable, values_from = observation) |> 
+      filter(if_any(starts_with("Flag"),  ~.x == 0)) |> 
+      select(-starts_with('Flag')) |> 
+      rename(observation = starts_with('Thermistor')) |> 
+      mutate(variable = 'Temp_C')
+    
     # combine
     df_all <- df_long |>
       dplyr::bind_rows(df_DO) |> 
+      dplyr::bind_rows(df_bottomT) |>
       na.omit() |> 
       dplyr::select(datetime, site_id, depth_m, observation, variable) |>
       dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
