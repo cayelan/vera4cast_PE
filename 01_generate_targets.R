@@ -16,7 +16,14 @@ bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/4/9adadd2a7c2319
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
 
-targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI)) 
+targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI), interpolate = T, maxgap = 12) |> 
+  mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', depth_m)))
+
+targets_PT1H <- downsample(ts = targets, 
+                           out_freq = 'hourly', 
+                           method = 'sample', 
+                           target_out = '00:00',
+                           max_distance = 20) # 20 minutes either side 
 
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
@@ -24,17 +31,11 @@ targets_P1D <- downsample(ts = targets,
                           target_out = '12:00:00',
                           max_distance = 2) # 2 hours either side
 
-targets_PT1H <- downsample(ts = targets, 
-                           out_freq = 'hourly', 
-                           method = 'sample', 
-                           target_out = '00:00',
-                           max_distance = 40) # 40 minutes either side 
-
 targets_P1W <- downsample(ts = targets, 
                           out_freq = 'weekly', 
                           method = 'sample', 
-                          target_out = '3', # 3rd DOW ie Wednesday
-                          max_distance = 1) # one day either side
+                          target_out = c('12:00:00', 2), # 2nd DOW ie Tuesday
+                          max_distance = c(2, 1)) # 2 hours from 12 and 1 day either side
 
 # Get temperature profiles
 temp_profiles <- 
@@ -49,18 +50,21 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
 
 # Plot the observations
 targets_P1D |> 
-  filter(site_id == 'bvre') |> 
+  filter(site_id == 'fcre') |> 
   ggplot(aes(x=yday(date), y=observation, colour = as_factor(year(date)))) +
   geom_line() +
-  facet_wrap(variable~depth_m, scales = 'free_y')
+  facet_wrap(variable~depth_m, scales = 'free_y', nrow = 3)
 
-# =====================================================#
+targets_PT1H |> 
+  filter(variable == 'SpCond_uScm') |> 
+  ggplot(aes(x=datetime, y=observation, colour = as_factor(year(datetime)))) +
+  geom_line() +
+  facet_wrap(site_id~depth_m, scales = 'free_y', nrow = 3)
 
-# Set parameters for PE calculations
-D  <- 4 # length of the word, embedding dimension
-tau <- 1 # embedding time delay
-window_length <- 30 # for a rolling PE how long should the time series be
-resample_n <- 50 # how many samples? for the resampled PE
+targets |> 
+  filter(variable == 'SpCond_uScm') |> 
+  ggplot(aes(x=datetime, y=observation, colour = as_factor(year(datetime)))) +
+  geom_line() +
+  facet_wrap(site_id~depth_m, scales = 'free_y', nrow = 3)
 
-#======================================================#
-
+             
