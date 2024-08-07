@@ -12,6 +12,7 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
   targets <- NULL
   
   # Load data
+  message('Reading data from EDI...')
   for (i in 1:length(infiles)) {
     df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
       filter(Site == 50) |> 
@@ -36,6 +37,7 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
     
     
     # Filter any flagged data
+    message('Filtering flags...')
     df_long <- inner_join(df_observations, df_flags, 
                           # by = c('site_id', 'datetime', 'depth_m', 'variable'),
                           relationship = 'many-to-many') |> 
@@ -408,4 +410,36 @@ get_targets_sample  <- function(infiles, start_date, end_date) {
   }
   
  return(final_df) 
+}
+
+max_na <- function(ts) {
+  rle_na <- rle(is.na(ts))
+  
+  rle_na <- data.frame(value = rle_na$values,
+                       length = rle_na$lengths) 
+  
+  if (sum(rle_na$value == T) > 0) {
+    longest_na <- rle_na |> 
+      filter(value == T) |> 
+      summarise(max(length)) |> 
+      pull()
+  } else {
+    longest_na <- 0
+  }
+  return(longest_na)
+}
+
+
+n_cont <- function(ts) {
+  
+  rle_na <- rle(is.na(ts))
+  
+  rle_na <- data.frame(value = rle_na$values,
+                       length = rle_na$lengths) 
+  
+  n_cont <- rle_na |> 
+    filter(value == F) |> 
+    summarise(n()) |> pull()
+  
+  return(n_cont)
 }
