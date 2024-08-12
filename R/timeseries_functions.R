@@ -12,10 +12,13 @@ resample <- function(ts, length.out = 100, n = 100, doy = NA) {
   
   resample_list <- NULL
   
+  start_index <- sample(1:(length_ts - length.out), size = n, replace = F)
+  
+  
   for (i in 1:n) {
-    start_index <- floor(runif(1, min=1, max=length_ts - length.out))
-    
-    ts_subset <- data.frame(observation = ts[start_index:(start_index+length.out-1)],
+  
+  
+    ts_subset <- data.frame(observation = ts[start_index[i]:(start_index[i]+length.out-1)],
                             index = seq(1, length.out, by=1)) |> 
       mutate(n = i)
     
@@ -23,7 +26,7 @@ resample <- function(ts, length.out = 100, n = 100, doy = NA) {
       resample_list <- bind_rows(ts_subset, resample_list)
     } else {
       ts_subset <- ts_subset |> 
-        mutate(doy = doy[start_index])
+        mutate(doy = doy[start_index[i]])
       resample_list <- bind_rows(ts_subset, resample_list)
     }
     
