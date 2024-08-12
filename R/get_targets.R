@@ -16,10 +16,11 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
   for (i in 1:length(infiles)) {
     df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
       filter(Site == 50) |> 
-      mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
-      rename(datetime = DateTime) |> 
-      filter(site_id %in% c('fcre', 'bvre')) |> 
-      select(-Site, -Reservoir)
+      # mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
+      rename(datetime = DateTime,
+             site_id = Reservoir) |> 
+      filter(site_id %in% c('FCR', 'BVR')) |> 
+      select(-Site)
     
     df_flags <- df |> 
       select(any_of(c('datetime', 'site_id')) | contains('Flag') & contains(standard_names$variable)) |> 
@@ -45,8 +46,8 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
       filter(!flag_value %in% c(9, 7, 2, 1, 5, 3)) |> 
       select(-contains('flag')) |> 
       mutate(depth_m = as.numeric(str_split_i(variable, "_", 3)), 
-             depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'fcre', 1.6, 
-                              ifelse(str_detect(variable, 'EXO') & site_id == 'bvre', 1.5, depth_m)),
+             depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'FCR', 1.6, 
+                              ifelse(str_detect(variable, 'EXO') & site_id == 'BVR', 1.5, depth_m)),
              variable = str_split_i(variable, "\\.", 1)) |> 
       full_join(standard_names) |> 
       mutate(variable = variable_new) |> 
@@ -57,8 +58,8 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
       select(datetime, site_id, any_of(c('RDO_mgL_9_adjusted', 'RDO_mgL_13', 'EXODO_mgL_1', 'EXODO_mgL_1.5'))) |>
       pivot_longer(cols = contains('DO'), names_to = 'variable', values_to = 'observation') |>
       mutate(depth_m = as.numeric(str_split_i(variable, "_", 3)), 
-             depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'fcre', 1.6, 
-                              ifelse(str_detect(variable, 'EXO') & site_id == 'bvre', 1.5, depth_m)),
+             depth_m = ifelse(str_detect(variable, 'EXO') & site_id == 'FCR', 1.6, 
+                              ifelse(str_detect(variable, 'EXO') & site_id == 'BVR', 1.5, depth_m)),
              variable = 'DO_mgL') 
     
     #get bottom temp
@@ -155,10 +156,10 @@ get_temp_profiles <- function(current_file = 'none', historic_file){
                             names_to = 'depth',
                             names_prefix = 'ThermistorTemp_C_',
                             values_to = 'observation') |>
-        dplyr::mutate(Reservoir = ifelse(Reservoir == 'FCR',
-                                         'fcre',
-                                         ifelse(Reservoir == 'BVR',
-                                                'bvre', NA)),
+        dplyr::mutate(#Reservoir = ifelse(Reservoir == 'FCR',
+                        #                 'fcre',
+                         #                ifelse(Reservoir == 'BVR',
+                          #                      'bvre', NA)),
                       date = lubridate::as_date(DateTime)) |>
         na.omit() |>
         dplyr::group_by(date, Reservoir, depth) |>
@@ -228,10 +229,10 @@ get_temp_profiles <- function(current_file = 'none', historic_file){
                           names_to = 'depth',
                           names_prefix = 'ThermistorTemp_C_',
                           values_to = 'observation') |>
-      dplyr::mutate(Reservoir = ifelse(Reservoir == 'FCR',
-                                       'fcre',
-                                       ifelse(Reservoir == 'BVR',
-                                              'bvre', NA)),
+      dplyr::mutate(#Reservoir = ifelse(Reservoir == 'FCR',
+                     #                  'fcre',
+                      #                 ifelse(Reservoir == 'BVR',
+                       #                       'bvre', NA)),
                     date = lubridate::as_date(DateTime)) |>
       dplyr::group_by(date, Reservoir, depth)  |>
       dplyr::summarise(observation = mean(observation, na.rm = T),
@@ -376,8 +377,8 @@ get_targets_sample  <- function(infiles, start_date, end_date) {
     df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
       filter(Site == 50) |> 
       rename(any_of(standard_names))  |> 
-      mutate(site_id = ifelse(site_id == 'BVR', 'bvre', ifelse(site_id == 'FCR', 'fcre', site_id))) |> 
-      filter(site_id %in% c('fcre', 'bvre')) |> 
+      # mutate(site_id = ifelse(site_id == 'BVR', 'bvre', ifelse(site_id == 'FCR', 'fcre', site_id))) |> 
+      filter(site_id %in% c('FCR', 'BVR')) |> 
       select(-Site)
     
     df_flags <- df |> 
