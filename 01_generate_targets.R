@@ -37,6 +37,17 @@ targets_P1W <- downsample(ts = targets,
                           target_out = c('12:00:00', 2), # 2nd DOW ie Tuesday
                           max_distance = c(2, 1)) # 2 hours from 12 and 1 day either side
 
+# interpolation?
+targets_P1D_interp <- targets_P1D |> 
+  na.omit() |> 
+  tsibble::as_tsibble(index = date, key = c(site_id, variable, depth_m)) |> 
+  tsibble::fill_gaps() |> 
+  as_tibble() |> 
+  group_by(variable, site_id, depth_m) |> 
+  arrange(date) |> 
+  mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3))
+
+
 # Get temperature profiles
 temp_profiles <- 
   map2(c('none', 'none'), c(fcre_EDI, bvre_EDI), get_temp_profiles) |>
@@ -49,22 +60,48 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
          end = as_date(end))
 
 # Plot the observations
-targets_P1D |> 
-  filter(site_id == 'fcre') |> 
-  ggplot(aes(x=yday(date), y=observation, colour = as_factor(year(date)))) +
-  geom_line() +
-  facet_wrap(variable~depth_m, scales = 'free_y', nrow = 3)
-
 targets_PT1H |> 
   filter(variable == 'SpCond_uScm') |> 
   ggplot(aes(x=datetime, y=observation, colour = as_factor(year(datetime)))) +
   geom_line() +
   facet_wrap(site_id~depth_m, scales = 'free_y', nrow = 3)
 
-targets |> 
-  filter(variable == 'SpCond_uScm') |> 
-  ggplot(aes(x=datetime, y=observation, colour = as_factor(year(datetime)))) +
+targets_P1D |> 
+  filter(variable != 'SpCond_uScm') |> 
+  ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line() +
+  facet_grid(variable~site_id, scales = 'free_y')
+
+targets_P1W |> 
+  filter(variable == 'Temp_C') |> 
+  ggplot(aes(x=as_date(year_week), y=observation)) +
+  geom_point() +
   facet_wrap(site_id~depth_m, scales = 'free_y', nrow = 3)
 
-             
+
+test <- targets_P1D |> 
+  filter(variable == 'Temp_C',
+         site_id == 'fcre', 
+         depth_m == 'bottom')
+
+
+targets_P1D_interp |> 
+  # filter(variable != 'SpCond_uScm') |> 
+  group_by(site_id, variable, depth_m) |> 
+  summarise(max_na = max_na(observation),
+            n_cont = n_cont(observation))
+
+
+# Resample timeseries
+resample_length <- 50 # how long are the sections?
+resample_n <- 500 # how many times should the timeseries be sampled
+targets_P1D_resample <- targets_P1D |>
+  na.omit() |> 
+  tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
+  arrange(variable, depth_m, site_id, date) |> 
+  reframe(.by = c(variable, site_id, depth_m),
+          resample(ts = observation, 
+                   length.out = resample_length, 
+                   n = resample_n, 
+                   doy = date))
+
