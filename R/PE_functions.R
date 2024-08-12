@@ -17,7 +17,8 @@ calculate_PE <- function(x,
                          bootstrap_CI = F,
                          CI = 0.95,
                          bootstrap_n = 1000) {
-  
+
+  # message('start ', x[1], ' end ', x[length(x)])
   # figure out how many continuous missing there are
   x_missing <- data.frame(values = rle(is.na(x))$values,
                           lengths = rle(is.na(x))$lengths) |> 
@@ -42,7 +43,11 @@ calculate_PE <- function(x,
     x_emb <- embed_data(x = x, D = D, tau = tau)
     ## Remove any run containing NAs
     x_emb <- x_emb[!rowSums(is.na(x_emb)),]
-    if (nrow(x_emb) < 10) {
+    
+    if (is.null(nrow(x_emb))) {
+      message('Not enough runs that dont contain NAs, min is 10')
+      return(NA)
+    } else if (nrow(x_emb) < 10 ) {
       message('Not enough runs that dont contain NAs, min is 10')
       return(NA)
     } else {
@@ -61,10 +66,11 @@ calculate_PE <- function(x,
                                       tau =  tau,
                                       tie_method = tie_method,
                                       x_emb =  x_emb,
-                                      B = bootstrap_n, 
+                                      B = bootstrap_n,
+                                      use_weights = use_weights,
                                       CI = CI)
         
-        return(c(PE=PE, PE_confint))
+        return(c(mean=PE, PE_confint))
         
       }else {
         return(PE)
@@ -88,7 +94,7 @@ calculate_PE <- function(x,
 
 embed_data <- function(x, 
                        D = 3,
-                       tau) {
+                       tau = 1) {
   
   n <- length(x) - (D-1)*tau # nrows in matrix
   x1 <- seq_along(x)
@@ -176,7 +182,8 @@ calculate_PE_ts <- function(x, # a time series, explicit gaps
     dplyr::mutate(datetime = x1$datetime[1:(length_ts - window_width + 1)],
                   variable = unique(x1$variable),
                   site_id = unique(x1$site_id),
-                  depth_m = unique(x1$depth_m)) 
+                  depth_m = unique(x1$depth_m)) |> 
+    dplyr::rename_with(~time_col, datetime)
   
   return(PE)
 }
@@ -199,6 +206,7 @@ calculate_PE_CI <- function(PE,
                             tau, 
                             tie_method,
                             x_emb, 
+                            use_weights,
                             B = 1000, 
                             CI = 0.95) {
   
@@ -215,15 +223,14 @@ calculate_PE_CI <- function(PE,
     words <-  unlist(lapply(lapply(1:nrow(x_emb), function(i) (rank(-x_emb[i,]))), paste, collapse="-")) 
   }
   
-  transitions <- get_transitions(words = words, D = D)
-  
-  # transitions
-  # Bootstrap the permutation entropy
-  
-  
   # observed probabilities of each of the sequences
   pni <- get_sequence_probs(words = words, D = D)
   # pni
+  
+  transitions <- get_transitions(words = words, D = D)
+  # transitions
+  
+  # Bootstrap the permutation entropy
   
   # Bootstrap the PE
   PE_b <- bootstrap_PE(words = words, 
@@ -235,6 +242,7 @@ calculate_PE_CI <- function(PE,
   
   # calculate the confidence intervals
   mean_PE_b <- mean(PE_b)
+  sd_PE_b <- sd(PE_b)
   
   PE_b_bias <- sort((mean_PE_b - PE_b))
   
@@ -243,12 +251,13 @@ calculate_PE_CI <- function(PE,
   lb_index <- alpha/2 * B
   ub_index <- (1- (alpha/2)) * B
   
-  quantile_lower <- max(2*PE - mean_PE_b + PE_b_bias[lb_index], 0)
-  quantile_upper <- min(2*PE - mean_PE_b + PE_b_bias[ub_index], 1)
+  quantile_lower <- max((2*PE) - mean_PE_b + PE_b_bias[lb_index], 0)
+  quantile_upper <- min((2*PE) - mean_PE_b + PE_b_bias[ub_index], 1)
   
-  confidence_int <- c(quantile_lower, quantile_upper)
+  confidence_int <- c(quantile_lower, quantile_upper, sd_PE_b)
   names(confidence_int) <- c(paste0('quantile_', 100*(alpha/2)),
-                             paste0('quantile_', 100*(1- alpha/2)))
+                             paste0('quantile_', 100*(1- alpha/2)),
+                             'sd')
   
   
   return(confidence_int)
@@ -262,7 +271,7 @@ calculate_PE_CI <- function(PE,
 #' @param words the sequences from the observed time series
 #' @returns a matrix
 #'
-get_transitions <- function(words, D) {
+get_transitions <- function(words, D, use_percents = T) {
   
   # what are the possible observed sequences based on the D and tau selected?
   all_perm <- perm(c(1:D))
@@ -280,7 +289,13 @@ get_transitions <- function(words, D) {
     for (j in 1:length(all_perm)) {
       # Goes from i to j
       index <- which(words == all_perm[i] & lead(words) == all_perm[j])
-      transitions[i,j] <- round(length(index)/ni, 3)
+      
+      if (use_percents) {
+        transitions[i,j] <- round(length(index)/ni, 3)
+        
+      } else {
+        transitions[i,j] <- length(index)
+      }
     }
     
   }
@@ -295,7 +310,7 @@ get_transitions <- function(words, D) {
 #' @param words the sequences from the observed time series
 #' @returns a matrix
 #'
-get_sequence_probs <- function(words, D) {
+get_sequence_probs <- function(words, D, use_percents = T) {
   # what are the possible observed sequences based on the D and tau selected?
   all_perm <- perm(c(1:D))
   
@@ -305,7 +320,12 @@ get_sequence_probs <- function(words, D) {
   
   for (i in 1:length(all_perm)) {
     ni <- length(which(words == all_perm[i]))
-    pni[i] <- ni/length(words)
+    if (use_percents) {
+      pni[i] <- ni/length(words)
+    } else {
+      pni[i] <- ni
+    }
+   
   }
   return(pni)
 }
