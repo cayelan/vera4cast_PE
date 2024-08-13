@@ -81,7 +81,7 @@ targets_P1W |>
 
 test <- targets_P1D |> 
   filter(variable == 'Temp_C',
-         site_id == 'fcre', 
+         site_id == 'FCR', 
          depth_m == 'bottom')
 
 
@@ -105,3 +105,11 @@ targets_P1D_resample <- targets_P1D |>
                    n = resample_n, 
                    doy = date))
 
+# Generate shuffles
+
+targets_P1D_shuffled <- targets_P1D |>
+  na.omit() |> 
+  tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
+  arrange(variable, depth_m, site_id, date) |>
+  reframe(.by = c(variable, site_id, depth_m),
+          shuffle(ts = observation, times = 1000)) 
