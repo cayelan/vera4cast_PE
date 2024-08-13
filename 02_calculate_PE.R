@@ -7,7 +7,6 @@ window_length <- 30 # for a rolling PE how long should the time series be
 
 #======================================================#
 
-
 PE_resampled_P1D <- targets_P1D_resample |> 
   group_by(n, site_id, variable, depth_m, doy) |> 
   summarise(PE = calculate_PE(observation, D = D, tau = tau, use_weights = T, ignore_gaps = T),
@@ -25,3 +24,7 @@ PE_ts_P1D <- targets_P1D_interp |>
                             use_weights = T)) |> 
   bind_rows()
 
+# Shuffle timeseries and calculate 
+PE_shuffled_P1D <- targets_P1D_shuffled |> 
+  group_by(variable, site_id, depth_m, n) |> 
+  summarise(PE = calculate_PE(observation, D = D, tau = tau))
