@@ -153,3 +153,25 @@ downsample <- function(ts,
   
   return(ts_downsample)
 }
+
+#' Shuffle a timeseries
+#' 
+#' @param ts a vector of data 
+#' @param times how many shuffled realisations should be generated
+#' @returns a dataframe 
+
+shuffle <- function(ts, times = 1) {
+  
+  resample_list <- NULL
+  
+  message('Generating ', times , ' shuffled realisation(s)')
+  for (i in 1:times) {
+    
+    ts_shuffle <- data.frame(observation = sample(ts)) |> 
+      mutate(n = i)
+    
+    resample_list <- bind_rows(ts_shuffle, resample_list)
+    
+  }
+  return(resample_list)
+}
