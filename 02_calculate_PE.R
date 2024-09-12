@@ -38,5 +38,5 @@ PE_ts_P1D <- targets_P1D_interp |>
 
 # Shuffle timeseries and calculate 
 PE_shuffled_P1D <- targets_P1D_shuffled |> 
-  group_by(variable, site_id, depth_m, n) |> 
-  summarise(PE = calculate_PE(observation, D = D, tau = tau))
+  reframe(.by = c(variable, site_id, depth_m, n),
+          PE = calculate_PE(observation, D = D, tau = tau))
