@@ -11,7 +11,8 @@ source('R/timeseries_functions.R')
 # Get observational target data
 
 fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/8/fbb8c7a0230f4587f1c6e11417fe9dce"
-bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/4/9adadd2a7c2319e54227ab31a161ea12"
+# bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/4/9adadd2a7c2319e54227ab31a161ea12"
+bvre_EDI <- "https://pasta-s.lternet.edu/package/data/eml/edi/157/31/9adadd2a7c2319e54227ab31a161ea12" 
 
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
@@ -61,13 +62,13 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
 
 # Plot the observations
 targets_PT1H |> 
-  filter(variable == 'SpCond_uScm') |> 
+  # filter(variable == 'SpCond_uScm') |> 
   ggplot(aes(x=datetime, y=observation, colour = as_factor(year(datetime)))) +
   geom_line() +
   facet_wrap(site_id~depth_m, scales = 'free_y', nrow = 3)
 
 targets_P1D |> 
-  filter(variable != 'SpCond_uScm') |> 
+  # filter(variable != 'SpCond_uScm') |> 
   ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line() +
   facet_grid(variable~site_id, scales = 'free_y')
