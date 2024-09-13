@@ -4,17 +4,21 @@
 #' @param interpolate should interpolation be carried out
 #' @return a targets dataframe in VERA format
 
-get_targets <- function(infiles, interpolate = T, maxgap = 12) {
+get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
   
+  met_files <- infiles[is_met] 
+  message('processing ', length(met_files), ' met file(s)')
+  wq_files <- infiles[!is_met]
+  message('processing ', length(wq_files), ' wq file(s)')
   
   standard_names <- data.frame(variable_new = c('Temp_C','SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
                                variable = c('EXOTemp_C_1', 'EXOSpCond_uScm_1', 'EXOChla_ugL_1', 'EXOfDOM_QSU_1'))
-  targets <- NULL
+  targets_wq <- NULL
   
   # Load data
-  message('Reading data from EDI...')
-  for (i in 1:length(infiles)) {
-    df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
+  message('Reading WQ data from EDI...')
+  for (i in 1:length(wq_files)) {
+    df <- read_csv(wq_files[i], show_col_types = F, progress = F) |> 
       filter(Site == 50) |> 
       # mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
       rename(datetime = DateTime,
@@ -88,8 +92,16 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
       as_tibble()
     
     
-    targets <- bind_rows(targets, df_all) 
+    targets_wq <- bind_rows(targets_wq, df_all) 
   }
+  
+  if (length(met_files) != 0) {
+    targets_met <- get_met(infiles = met_files, interpolate = interpolate, maxgap = maxgap)
+  } else {
+    targets_met <- NULL
+  }
+  
+  targets <- bind_rows(targets_met, targets_wq)
   
   if (interpolate == T) {
     test <- targets |> 
@@ -102,6 +114,57 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12) {
 }
 
 # ================================================================#
+
+get_met  <- function(infiles, interpolate = T, maxgap =12) {
+  
+  standard_names <- data.frame(variable_new = c('AirTemp_C'),
+                               variable = c('AirTemp_C_Average'))
+  targets <- NULL
+  
+  # Load data
+  message('Reading met data from EDI...')
+  for (i in 1:length(infiles)) {
+    df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
+      filter(Site == 50) |> 
+      # mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
+      rename(datetime = DateTime,
+             site_id = Reservoir) |> 
+      filter(site_id %in% c('FCR', 'BVR')) |> 
+      select(-Site)
+    
+    df_flags <- df |> 
+      select(any_of(c('datetime', 'site_id')) | contains('Flag') & contains(standard_names$variable)) |> 
+      pivot_longer(cols = contains('Flag'),
+                   names_to = 'variable', 
+                   values_to = 'flag_value', 
+                   names_prefix = 'Flag_')
+    
+    df_observations <- df |> 
+      select(any_of(c('datetime', 'site_id')) | contains(standard_names$variable) & !contains('Flag') & !contains('Note')) |> 
+      pivot_longer(cols = -any_of(c('site_id', 'datetime')),
+                   names_to = 'variable', 
+                   values_to = 'observation', 
+                   names_prefix = 'Flag_')
+    
+    
+    # Filter any flagged data
+    message('Filtering flags...')
+    df_long <- inner_join(df_observations, df_flags, 
+                          # by = c('site_id', 'datetime', 'depth_m', 'variable'),
+                          relationship = 'many-to-many') |> 
+      na.omit() |> 
+      filter(!flag_value %in% c(9, 7, 2, 1, 5, 3, 4)) |> 
+      select(-contains('flag')) |> 
+      full_join(standard_names) |> 
+      mutate(variable = variable_new) |> 
+      select(-variable_new)
+    
+    
+    targets <- bind_rows(targets, df_long) 
+  }
+  
+  return(targets)
+}
 
 # =================== Temperature profiles ==================
 

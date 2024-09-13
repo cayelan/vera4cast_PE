@@ -13,11 +13,14 @@ source('R/timeseries_functions.R')
 fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/8/fbb8c7a0230f4587f1c6e11417fe9dce"
 # bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/4/9adadd2a7c2319e54227ab31a161ea12"
 bvre_EDI <- "https://pasta-s.lternet.edu/package/data/eml/edi/157/31/9adadd2a7c2319e54227ab31a161ea12" 
+fcre_met <-  "https://pasta.lternet.edu/package/data/eml/edi/389/8/d4c74bbb3b86ea293e5c52136347fbb0" 
 
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
 
-targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI), interpolate = T, maxgap = 12) |> 
+targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI, fcre_met),
+                       is_met = c(F,F,T),
+                       interpolate = T, maxgap = 12) |> 
   mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', depth_m)))
 
 targets_PT1H <- downsample(ts = targets, 
