@@ -102,6 +102,7 @@ PE_ts_P1D |>
 
 # PE of shuffled realisations
 PE_shuffled_P1D |>
+  filter(n %in% 900:1000) |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Temp_C',
                                                 'SpCond_uScm',
@@ -110,23 +111,24 @@ PE_shuffled_P1D |>
                                                 'Chla_ugL'))) |> 
   ggplot() +
   geom_jitter(aes(y= variable, 
-                  x = PE, 
+                  x = 1-PE, 
                   colour = site_id), 
               size=0.4, shape = 16, alpha=0.6, 
               position=position_jitterdodge(dodge.width=0.9)) +
   geom_boxplot(aes(y= variable,
-                   x = PE, 
+                   x = 1-PE, 
                    colour = site_id), 
                fill = NA,  position=position_dodge(width=0.9), outlier.shape = NA) +
-  facet_nested_wrap(vars(variable, depth_m), 
-                    dir = "h",
-                    # axes = "x",
-                    remove_labels = 'all',
-                    ncol = 3,
-                    scales = 'free') +
+  facet_wrap(variable~depth_m, scales = 'free') +
+  # facet_nested_wrap(vars(variable, depth_m), 
+  #                   dir = "h",
+  #                   # axes = "x",
+  #                   remove_labels = 'all',
+  #                   ncol = 3,
+  #                   scales = 'free') +
   geom_point(data = summary_PE, 
              aes(y= variable, 
-                 x = PE, 
+                 x = 1-PE, 
                  colour = site_id), 
              show.legend = F, size = 2.5, shape = 8, 
              position=position_dodge(width = 1))+
