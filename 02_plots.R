@@ -1,10 +1,10 @@
 library(ggh4x)
+library(ggridges)
 # Plots for manuscript
 D = 3
 tau = 1
 ### Figure 1 - observations ####
-targets_P1D |> 
-  filter(variable != 'SpCond_uScm') |> 
+targets_P1D |>
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom'))) |> 
   ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
