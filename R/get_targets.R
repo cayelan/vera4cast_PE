@@ -124,7 +124,7 @@ get_met  <- function(infiles, interpolate = T, maxgap =12) {
   # Load data
   message('Reading met data from EDI...')
   for (i in 1:length(infiles)) {
-    df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
+    df <- suppressWarnings(read_csv(infiles[i], show_col_types = F, progress = F)) |> 
       filter(Site == 50) |> 
       # mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
       rename(datetime = DateTime,
