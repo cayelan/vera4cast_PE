@@ -30,8 +30,10 @@ summary_PE <- targets_P1D_interp |>
   group_by(site_id, variable, depth_m) |> 
   summarise(PE = calculate_PE(observation, D = D, tau = tau))
 
-central_tendancy <- PE_resampled_P1D |> 
-  filter(depth_m != 'met') |> 
+central_tendancy_PE_sitewise <- PE_ts_P1D |> 
+  filter(depth_m != 'met',
+         year(date) >= 2021) |> 
+  na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
          variable = factor(variable, levels = c('AirTemp_C',
                                                 'Temp_C',
@@ -45,8 +47,9 @@ central_tendancy <- PE_resampled_P1D |>
           CDF = mean(PE <= 0.5),
           median = median(PE)) 
 
-PE_combined <- PE_resampled_P1D |> 
-  filter(depth_m != 'met') |> 
+PE_sitewise <- PE_ts_P1D |> 
+  filter(depth_m != 'met',
+         year(date) >= 2021) |> 
   mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
          variable = factor(variable, levels = c('AirTemp_C',
                                                 'Temp_C',
@@ -57,15 +60,14 @@ PE_combined <- PE_resampled_P1D |>
          predictability = 1-PE) |> 
   na.omit() |> 
   ggplot()+
-  labs(title = 'sample') +
   geom_density_ridges(aes(x=PE, y= variable,
                    colour = variable, 
                    fill = variable), 
                alpha = 0.5, rel_min_height = 0.005) +
   # geom_text(data = summary_PE, 
   #           aes(x = PE, y = variable, label = "*", colour = variable), show.legend = F, size = 7) +
-  geom_vline(data = filter(summary_PE, depth_m != 'met'),
-             aes(xintercept = PE, colour = variable), 
+  geom_vline(data = filter(central_tendancy_PE_sitewise),
+             aes(xintercept = median, colour = variable), 
              show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
   facet_grid(depth_m~site_id, scales = 'free') +
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
@@ -78,9 +80,26 @@ PE_combined <- PE_resampled_P1D |>
         axis.title.y = element_blank(),
         strip.background = element_rect(fill = 'white', colour = NA)) 
 
+central_tendancy_PE_combined <-PE_ts_P1D |> 
+  filter(depth_m != 'met',
+         year(date) >= 2021) |> 
+  na.omit() |> 
+  mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
+         variable = factor(variable, levels = c('AirTemp_C',
+                                                'Temp_C',
+                                                'SpCond_uScm',
+                                                'fDOM_QSU',
+                                                'DO_mgL',
+                                                'Chla_ugL')),
+         predictability = 1-PE) |> 
+  reframe(.by = c(variable, depth_m),
+          quantile_80 = quantile(PE, 0.8),
+          CDF = mean(PE <= 0.5),
+          median = median(PE)) 
 
-PE_sitewise <- PE_resampled_P1D |> 
-  filter(depth_m != 'met') |> 
+PE_combined <- PE_ts_P1D |> 
+  filter(depth_m != 'met',
+         year(date) >= 2021)  |> 
   mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
          variable = factor(variable, levels = c('AirTemp_C',
                                                 'Temp_C',
@@ -95,10 +114,10 @@ PE_sitewise <- PE_resampled_P1D |>
                           colour = variable, 
                           fill = variable), 
                       alpha = 0.5, rel_min_height = 0.005) +
-  geom_vline(data = filter(central_tendancy, depth_m != 'met'),
+  geom_vline(data = filter(central_tendancy_PE_combined, depth_m != 'met'),
              aes(xintercept = median, colour = variable), 
              show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
-  facet_grid(depth_m~site_id, scales = 'free') +
+  facet_wrap(~depth_m, scales = 'free', ncol = 1) +
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
@@ -110,27 +129,12 @@ PE_sitewise <- PE_resampled_P1D |>
         strip.background = element_rect(fill = 'white', colour = NA), 
         panel.spacing.x = unit(1, "lines")) 
 
-ggpubr::ggarrange(combined, sitewise, common.legend = T, 
+ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
                   widths = c(1,1.75), 
                   labels = c('a)', 'b)'))
 
 
 ### Figure 3 - time series ####
-PE_ts_P1D |> 
-  filter(variable == 'DO_mgL',
-         year(date) != 2018) |> 
-  ggplot() +
-  geom_line(aes(x=yday(date), y=PE, group = year(date), colour = as_factor(year(date))),
-            alpha = 0.6) +
-  geom_smooth(aes(x=yday(date), y=PE, group = year(date), colour = as_factor(year(date))), 
-              method = 'gam', 
-              formula = y ~ s(x, bs = "cs")) + 
-  facet_grid(depth_m~site_id) +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        legend.position = 'right', 
-        strip.background = element_rect(fill = 'white'))
-
 
 PE_ts_P1D |> 
   filter(year(date) > 2020 & site_id == 'BVR' | 
