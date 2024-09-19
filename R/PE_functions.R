@@ -24,6 +24,12 @@ calculate_PE <- function(x,
                           lengths = rle(is.na(x))$lengths) |> 
     filter(values == T)
   
+  if (length(which(!is.na(x))) < 30) {
+    message('Theres too many NAs. Need at least 30 non-NA observations')
+    return(NA)
+    
+  }
+  
   if (nrow(x_missing) > 0 & !ignore_gaps) {
     if (sum(x_missing$lengths) > max_missing * length(x) | max(x_missing$lengths) > 10) {
       message(paste0('Theres too many NAs. Currently more than ', 100*max_missing, '% missing or > 10 missing consecutively.'))
