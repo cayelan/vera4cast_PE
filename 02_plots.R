@@ -20,6 +20,7 @@ targets_P1D |>
 
 ### Figure 2 - PE distributions ####
 summary_PE <- targets_P1D_interp |> 
+  filter(year(date) > 2020) |> 
   mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
          variable = factor(variable, levels = c('AirTemp_C',
                                                 'Temp_C',
@@ -100,7 +101,7 @@ central_tendancy_PE_combined <-PE_ts_P1D |>
 PE_combined <- PE_ts_P1D |> 
   filter(depth_m != 'met',
          year(date) >= 2021)  |> 
-  mutate(depth_m = factor(depth_m, levels = c('met', 'surface', 'bottom')),
+  mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('AirTemp_C',
                                                 'Temp_C',
                                                 'SpCond_uScm',
@@ -109,6 +110,7 @@ PE_combined <- PE_ts_P1D |>
                                                 'Chla_ugL')),
          predictability = 1-PE) |> 
   na.omit() |> 
+  mutate(sites = 'combined') |> 
   ggplot()+
   geom_density_ridges(aes(x=PE, y= variable,
                           colour = variable, 
@@ -117,7 +119,7 @@ PE_combined <- PE_ts_P1D |>
   geom_vline(data = filter(central_tendancy_PE_combined, depth_m != 'met'),
              aes(xintercept = median, colour = variable), 
              show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
-  facet_wrap(~depth_m, scales = 'free', ncol = 1) +
+  facet_grid(depth_m~sites, scales = 'free_y') +
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+

@@ -24,25 +24,25 @@ targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
   mutate(depth_m = ifelse(is.na(depth_m), 'met',
                           ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', NA))))
 
-targets_PT1H <- downsample(ts = targets, 
-                           out_freq = 'hourly', 
-                           method = 'sample', 
-                           target_out = '00:00',
-                           max_distance = 20) # 20 minutes either side 
+# targets_PT1H <- downsample(ts = targets, 
+#                            out_freq = 'hourly', 
+#                            method = 'sample', 
+#                            target_out = '00:00',
+#                            max_distance = 20) # 20 minutes either side 
 
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
                           method = 'sample', 
-                          target_out = '12:00:00',
+                          target_out = '00:00:00',
                           max_distance = 2) # 2 hours either side
 
 
 
-targets_P1W <- downsample(ts = targets, 
-                          out_freq = 'weekly', 
-                          method = 'sample', 
-                          target_out = c('12:00:00', 2), # 2nd DOW ie Tuesday
-                          max_distance = c(2, 1)) # 2 hours from 12 and 1 day either side
+# targets_P1W <- downsample(ts = targets, 
+#                           out_freq = 'weekly', 
+#                           method = 'sample', 
+#                           target_out = c('12:00:00', 2), # 2nd DOW ie Tuesday
+#                           max_distance = c(2, 1)) # 2 hours from 12 and 1 day either side
 
 # interpolation?
 targets_P1D_interp <- targets_P1D |> 
@@ -88,7 +88,7 @@ targets_P1W |>
 resample_length <- 50 # how long are the sections?
 resample_n <- 500 # how many times should the timeseries be sampled
 targets_P1D_resample <- targets_P1D |>
-  filter(year(date) >= 2021) # only the years where there are the same data
+  filter(year(date) >= 2021) |> # only the years where there are the same data
   na.omit() |> 
   tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
   arrange(variable, depth_m, site_id, date) |> 
