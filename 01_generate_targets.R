@@ -33,9 +33,12 @@ targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
                           method = 'sample', 
-                          target_out = '00:00:00',
+                          target_out = '12:00:00',
                           max_distance = 2) # 2 hours either side
 
+targets_P1D_av <- downsample(ts = targets, 
+                          out_freq = 'daily', 
+                          method = 'aggregate')
 
 
 # targets_P1W <- downsample(ts = targets, 
@@ -52,7 +55,16 @@ targets_P1D_interp <- targets_P1D |>
   as_tibble() |> 
   group_by(variable, site_id, depth_m) |> 
   arrange(date) |> 
-  mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3))
+  mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3)) |> ungroup()
+
+targets_P1D_av_interp <- targets_P1D_av |> 
+  na.omit() |> 
+  tsibble::as_tsibble(index = date, key = c(site_id, variable, depth_m)) |> 
+  tsibble::fill_gaps() |> 
+  as_tibble() |> 
+  group_by(variable, site_id, depth_m) |> 
+  arrange(date) |> 
+  mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3)) |> ungroup()
 
 
 # Get temperature profiles
@@ -66,43 +78,32 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
   mutate(start = as_date(start),
          end = as_date(end))
 
-# Plot the observations
-targets_PT1H |> 
-  ggplot(aes(x=datetime, y=observation, colour = depth_m)) +
-  geom_line() +
-  facet_wrap(site_id~variable, scales = 'free_y', nrow = 3)
-
-targets_P1D |> 
-  ggplot(aes(x=date, y=observation, colour = depth_m)) +
-  geom_line() +
-  facet_grid(variable~site_id, scales = 'free')
-
-targets_P1W |> 
-  filter(variable == 'Temp_C') |> 
-  ggplot(aes(x=as_date(year_week), y=observation)) +
-  geom_point() +
-  facet_wrap(site_id~depth_m, scales = 'free', nrow = 3)
-
 
 # Resample timeseries
-resample_length <- 50 # how long are the sections?
-resample_n <- 500 # how many times should the timeseries be sampled
-targets_P1D_resample <- targets_P1D |>
-  filter(year(date) >= 2021) |> # only the years where there are the same data
-  na.omit() |> 
-  tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
-  arrange(variable, depth_m, site_id, date) |> 
-  reframe(.by = c(variable, site_id, depth_m),
-          resample(ts = observation, 
-                   length.out = resample_length, 
-                   n = resample_n, 
-                   doy = date))
+# resample_length <- 50 # how long are the sections?
+# resample_n <- 500 # how many times should the timeseries be sampled
+# targets_P1D_resample <- targets_P1D |>
+#   filter(year(date) >= 2021) |> # only the years where there are the same data
+#   na.omit() |> 
+#   tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
+#   arrange(variable, depth_m, site_id, date) |> 
+#   reframe(.by = c(variable, site_id, depth_m),
+#           resample(ts = observation, 
+#                    length.out = resample_length, 
+#                    n = resample_n, 
+#                    doy = date))
 
 # Generate shuffles
-
-targets_P1D_shuffled <- targets_P1D |>
+targets_P1D_shuffled <- targets_P1D_interp |>
   na.omit() |> 
   tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
   arrange(variable, depth_m, site_id, date) |>
   reframe(.by = c(variable, site_id, depth_m),
-          shuffle(ts = observation, times = 500)) 
+          shuffle(ts = observation, times = 500))
+
+targets_P1D_av_shuffled <- targets_P1D_av_interp |>
+  na.omit() |> 
+  tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
+  arrange(variable, depth_m, site_id, date) |>
+  reframe(.by = c(variable, site_id, depth_m),
+          shuffle(ts = observation, times = 500))
