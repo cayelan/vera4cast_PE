@@ -11,7 +11,7 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
   wq_files <- infiles[!is_met]
   message('processing ', length(wq_files), ' wq file(s)')
   
-  standard_names <- data.frame(variable_new = c('Temp_C','SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
+  standard_names <- data.frame(variable_new = c('Tw_C','SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
                                variable = c('EXOTemp_C_1', 'EXOSpCond_uScm_1', 'EXOChla_ugL_1', 'EXOfDOM_QSU_1'))
   targets_wq <- NULL
   
@@ -77,7 +77,7 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
       filter(if_any(starts_with("Flag"),  ~.x == 0)) |> 
       select(-starts_with('Flag')) |> 
       rename(observation = starts_with('Thermistor')) |> 
-      mutate(variable = 'Temp_C')
+      mutate(variable = 'Tw_C')
     
     # combine
     df_all <- df_long |>

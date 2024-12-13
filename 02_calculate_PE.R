@@ -9,7 +9,7 @@ window_length <- 50 # for a rolling PE how long should the time series be
 # Summmary --------------
 summary_PE <- targets_P1D_interp |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
-         variable = factor(variable, levels = c('Temp_C',
+         variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
                                                 'fDOM_QSU',
                                                 'DO_mgL',
@@ -19,7 +19,7 @@ summary_PE <- targets_P1D_interp |>
 
 summary_av_PE <- targets_P1D_av_interp |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
-         variable = factor(variable, levels = c('Temp_C',
+         variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
                                                 'fDOM_QSU',
                                                 'DO_mgL',
@@ -65,7 +65,7 @@ PE_shuffled_P1D <- targets_P1D_shuffled |>
   reframe(.by = c(variable, site_id, depth_m, n),
           PE = calculate_PE(observation, D = D, tau = tau))
 
-
+# calculate the p value (how many are more or less than the random)
 full_join(PE_shuffled_P1D, summary_PE,
           by = join_by(variable, site_id, depth_m),
           suffix = c('_random', '')) |> 
