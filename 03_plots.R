@@ -257,45 +257,6 @@ central_tendancy_PE_season <-PE_ts_P1D |>
           CDF = mean(predictability >= 0.5),
           median = median(predictability)) 
 
-PE_ts_P1D |> 
-  filter(year(date) >= 2021)  |> 
-  mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
-         variable = factor(variable, levels = c('Tw_C',
-                                                'SpCond_uScm',
-                                                'fDOM_QSU',
-                                                'DO_mgL',
-                                                'Chla_ugL'), 
-                           labels = c('Tw_C',
-                                      'SpCond_uScm',
-                                      'fDOM_QSU',
-                                      'DO_mgL',
-                                      'Chla_ugL')),
-         predictability = 1-PE, 
-         season = factor(season(date), levels = c('Spring',
-                                                  'Summer',
-                                                  'Autumn',
-                                                  'Winter'))) |> 
-  na.omit() |> 
-  mutate(sites = 'both sites',) |> 
-  ggplot()+
-  geom_density_ridges(aes(x=predictability, y= variable,
-                          colour = variable, 
-                          fill = variable), 
-                      alpha = 0.5, rel_min_height = 0.005) +
-  geom_vline(data = filter(central_tendancy_PE_season),
-             aes(xintercept = median, colour = variable), 
-             show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
-  facet_grid(depth_m~season, scales = 'free_y') +
-  scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
-  scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
-  scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
-  theme_minimal() +
-  theme(panel.grid.minor = element_blank(),
-        legend.position = 'top', 
-        axis.text.y = element_text(hjust = 1, vjust = -1),
-        axis.title.y = element_blank(),
-        strip.background = element_rect(fill = 'white', colour = NA), 
-        panel.spacing.x = unit(1, "lines")) 
 
 # faceted by variable instead of season - allows comparison among seasons within variable
 PE_ts_P1D |> 
@@ -325,8 +286,9 @@ PE_ts_P1D |>
                       alpha = 0.5, rel_min_height = 0.005) +
   geom_vline(data = filter(central_tendancy_PE_season),
              aes(xintercept = median, colour = season), 
-             show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
-  facet_wrap(depth_m~variable, scales = 'free', ncol = 5, labeller = label_wrap_gen(multi_line=FALSE)) +
+             show.legend = F, linewidth = 0.8, alpha = 0.9, linetype = 'longdash') +
+  # ggh4x::facet_manual(vars(depth_m,variable), design = design) +
+  ggh4x::facet_grid2(depth_m~variable, drop = T, render_empty = F) +
   scale_fill_viridis_d(name = 'Season (astronomical)', option = 'turbo', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Season (astronomical)', option = 'turbo', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
@@ -336,7 +298,7 @@ PE_ts_P1D |>
         axis.title.y = element_blank(),
         strip.background = element_rect(fill = 'white', colour = NA), 
         panel.spacing.x = unit(1, "lines"),
-        legend.position.inside = c(0.65, 0.2), legend.direction = 'horizontal',
+        legend.position.inside = c(0.4, 0.2), legend.direction = 'horizontal',
         legend.position = "inside", legend.title.position = 'top') 
 
 
