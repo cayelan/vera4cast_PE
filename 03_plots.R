@@ -303,7 +303,21 @@ PE_ts_P1D |>
 
 
 # Supplementary Info plots -----------------
-# PE of shuffled realisations
+# Figure S2 - PE of shuffled realisations -----
+# calculate the p value (how many are more or less than the random)
+full_join(PE_shuffled_P1D, summary_PE,
+          by = join_by(variable, site_id, depth_m),
+          suffix = c('_random', '')) |> 
+  mutate(diff = PE - PE_random) |> # random >= PE, PE not noise
+  group_by(variable, site_id, depth_m) |> 
+  summarise(p = (sum(diff > 0)) / n())
+
+design <- "
+ AB#
+ DEF
+ GH#
+"
+
 PE_shuffled_P1D |>
   filter(n %in% 400:500) |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
@@ -316,19 +330,19 @@ PE_shuffled_P1D |>
   geom_jitter(aes(y= variable, 
                   x = 1-PE, 
                   colour = site_id), 
-              size=0.4, shape = 16, alpha=0.6, 
+              size=0.7, shape = 16, alpha=0.6, 
               position=position_jitterdodge(dodge.width=0.9)) +
   geom_boxplot(aes(y= variable,
                    x = 1-PE, 
                    colour = site_id), 
                fill = NA,  position=position_dodge(width=0.9), outlier.shape = NA) +
-  facet_wrap(variable~depth_m, scales = 'free') +
+  ggh4x::facet_nested_wrap(~variable + depth_m, scales = 'free', ncol = 3) +
   geom_point(data = summary_PE, 
              aes(y= variable, 
                  x = 1-PE, 
                  colour = site_id), 
              show.legend = F, size = 2.5, shape = 8, 
-             position=position_dodge(width = 1))+
+             position=position_dodge(width = 1)) +
   theme_bw()  + 
   labs(x='predictability') +
   scale_colour_manual(name = '', values = viridis::mako(n=2, begin = 0.8, end = 0.2), 
@@ -339,6 +353,6 @@ PE_shuffled_P1D |>
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         axis.ticks.y = element_blank(),
-        legend.position.inside = c(0.65, 0.2),
+        legend.position.inside = c(0.65, 0.25),
         legend.position = "inside",
         legend.background = element_rect(fill = "white", colour = NA))
