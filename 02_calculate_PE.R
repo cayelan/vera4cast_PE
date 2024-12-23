@@ -65,10 +65,4 @@ PE_shuffled_P1D <- targets_P1D_shuffled |>
   reframe(.by = c(variable, site_id, depth_m, n),
           PE = calculate_PE(observation, D = D, tau = tau))
 
-# calculate the p value (how many are more or less than the random)
-full_join(PE_shuffled_P1D, summary_PE,
-          by = join_by(variable, site_id, depth_m),
-          suffix = c('_random', '')) |> 
-  mutate(diff = PE - PE_random) |> # random >= PE, PE not noise
-  group_by(variable, site_id, depth_m) |> 
-  summarise(p = (sum(diff > 0)) / n())
+
