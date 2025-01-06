@@ -8,12 +8,36 @@ glimpse(PE_ts_P1D)
 
 # add a day-of-year variable
 PE_ts_P1D <- PE_ts_P1D |> 
-  mutate(day = yday(date))
+  mutate(day = yday(date)) 
 
-# Fit the model
-model_test <- lmer(PE ~ site_id + variable + site_id*variable + (site_id + variable | day), 
-                  data = PE_ts_P1D)
+# ----- Testing among variable/reservoir differences -----
+# Filter to only surface observations
+PE_ts_P1D_surface <-  PE_ts_P1D |> 
+  filter(depth_m == 'surface')
+# Site_id, variable tests
+# Fit the model for surface variables
+model_surface <- lmer(PE ~ site_id + variable + site_id*variable + (site_id + variable | day), 
+                  data = PE_ts_P1D_surface)
 
 # Evaluate model
-summary(model_test)
-car::Anova(model_test, type = 3, test.statistic = 'F')
+summary(model_surface)
+car::Anova(model_surface, type = 3, test.statistic = 'F')
+
+# ---- Testing for depth/reservoir/variable differences ----
+# Filter to only DO and Tw (that have both depths and sites)
+PE_ts_P1D_Tw_DO <-  PE_ts_P1D |> 
+  filter(variable %in% c('Tw_C', 'DO_mgL'))
+
+model_Tw_DO <- lmer(PE ~ site_id + variable + depth + 
+                     variable*depth + variable*site_id + site_id*depth + 
+                     site_id*variable*depth + 
+                     (site_id*variable*depth | day),
+                   data = PE_ts_P1D_Tw_DO)
+
+# Trying to fit a model with all interactions and sites/variables/depths
+# But this is not a balanced design, will this work
+model_all <- lmer(PE ~ site_id + variable + depth + 
+                      variable*depth + variable*site_id + site_id*depth + 
+                      site_id*variable*depth + 
+                      (site_id*variable*depth | day),
+                    data = PE_ts_P1D)
