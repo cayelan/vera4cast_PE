@@ -107,7 +107,8 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
     test <- targets |> 
       group_by(site_id, depth_m, variable) |> 
       arrange(datetime) |> 
-      mutate(observation = imputeTS::na_interpolation(observation, 'linear', maxgap = maxgap, rule = 1))
+      mutate(observation = zoo::na.approx(observation, na.rm = T,
+                                          maxgap = maxgap, rule = 1))
   }
   
   return(targets)
@@ -364,7 +365,7 @@ calc_strat_dates <- function(density_diff = 0.1,
       full_join(all_dates, by = 'datetime') |> 
       mutate(dens_diff = density_bottom - density_top,
              strat = ifelse(abs(dens_diff > 0.1) & observation_top > observation_bottom, 1, 0),
-             strat = imputeTS::na_interpolation(strat, option = 'linear'))
+             strat = zoo::na.approx(strat, option = 'linear'))
     
     
     # extract the dates of the stratified periods
