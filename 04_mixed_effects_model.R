@@ -8,6 +8,7 @@ glimpse(PE_ts_P1D)
 
 # add a day-of-year variable
 PE_ts_P1D <- PE_ts_P1D |> 
+<<<<<<< HEAD
   mutate(day = yday(date)) 
 
 # ----- Testing among variable/reservoir differences -----
@@ -18,6 +19,13 @@ PE_ts_P1D_surface <-  PE_ts_P1D |>
 # Fit the model for surface variables
 model_surface <- lmer(PE ~ site_id + variable + site_id*variable + (site_id + variable | day), 
                   data = PE_ts_P1D_surface)
+=======
+  mutate(day_of_year = yday(date))
+
+# Fit the model with site, variable and day of year
+model_test <- lmer(PE ~ site_id + variable + site_id*variable + (site_id + variable | day_of_year), 
+                  data = PE_ts_P1D)
+>>>>>>> 47a605d5868eb4194f4005039961e92186534975
 
 # Evaluate model
 summary(model_surface)
