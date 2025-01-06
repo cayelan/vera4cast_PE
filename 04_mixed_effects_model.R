@@ -17,7 +17,7 @@ PE_ts_P1D_surface <-  PE_ts_P1D |>
 # Site_id, variable tests
 # Fit the model for surface variables
 model_surface <- lmer(PE ~ site_id + variable + site_id*variable + (site_id + variable | day), 
-                  data = PE_ts_P1D_surface)
+                      data = PE_ts_P1D_surface)
 
 # Evaluate model
 summary(model_surface)
@@ -29,15 +29,23 @@ PE_ts_P1D_Tw_DO <-  PE_ts_P1D |>
   filter(variable %in% c('Tw_C', 'DO_mgL'))
 
 model_Tw_DO <- lmer(PE ~ site_id + variable + depth + 
-                     variable*depth + variable*site_id + site_id*depth + 
-                     site_id*variable*depth + 
-                     (site_id*variable*depth | day),
-                   data = PE_ts_P1D_Tw_DO)
+                      variable*depth + variable*site_id + site_id*depth + 
+                      site_id*variable*depth + 
+                      (site_id*variable*depth | day),
+                    data = PE_ts_P1D_Tw_DO)
+
+# Evaluate model
+summary(model_Tw_DO)
+car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
 
 # Trying to fit a model with all interactions and sites/variables/depths
 # But this is not a balanced design, will this work
 model_all <- lmer(PE ~ site_id + variable + depth + 
-                      variable*depth + variable*site_id + site_id*depth + 
-                      site_id*variable*depth + 
-                      (site_id*variable*depth | day),
-                    data = PE_ts_P1D)
+                    variable*depth + variable*site_id + site_id*depth + 
+                    site_id*variable*depth + 
+                    (site_id*variable*depth | day),
+                  data = PE_ts_P1D)
+
+# Evaluate model
+summary(model_all)
+car::Anova(model_all, type = 3, test.statistic = 'F')
