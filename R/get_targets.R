@@ -365,7 +365,7 @@ calc_strat_dates <- function(density_diff = 0.1,
       full_join(all_dates, by = 'datetime') |> 
       mutate(dens_diff = density_bottom - density_top,
              strat = ifelse(abs(dens_diff > 0.1) & observation_top > observation_bottom, 1, 0),
-             strat = zoo::na.approx(strat, option = 'linear'))
+             strat = zoo::na.approx(strat, na.rm = F))
     
     
     # extract the dates of the stratified periods
