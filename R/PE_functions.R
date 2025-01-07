@@ -51,10 +51,10 @@ calculate_PE <- function(x,
     x_emb <- x_emb[!rowSums(is.na(x_emb)),]
     
     if (is.null(nrow(x_emb))) {
-      message('Not enough runs that dont contain NAs, min is 10')
+      #message('Not enough runs that dont contain NAs, min is 10')
       return(NA)
     } else if (nrow(x_emb) < 10 ) {
-      message('Not enough runs that dont contain NAs, min is 10')
+     # message('Not enough runs that dont contain NAs, min is 10')
       return(NA)
     } else {
       # step 2 - calculate ordinal lengths
