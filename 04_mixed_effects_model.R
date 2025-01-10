@@ -10,8 +10,10 @@ glimpse(PE_ts_P1D)
 PE_ts_P1D <- PE_ts_P1D |> 
   mutate(day = yday(date)) 
 
+###########################################################
 # ----- Testing among variable/reservoir differences -----
 # Filter to only surface observations
+# Chla will be listed as the first variable because it is alphabetical
 PE_ts_P1D_surface <-  PE_ts_P1D |> 
   filter(depth_m == 'surface')
 # Site_id, variable tests
@@ -25,10 +27,11 @@ car::Anova(model_surface, type = 3, test.statistic = 'F')
 
 
 ## ----- Reorder the factors and check output
+# Water temp will be listed first in this model
 # Filter to only surface observations
 PE_ts_P1D_surface_reorder <-  PE_ts_P1D |> 
   filter(depth_m == 'surface') |> 
-  mutate(variable = factor(variable, ordered = T, levels = c("Tw_C","Chla_ugL", "DO_mgL", "SpCond_uScm",  "fDOM_QSU")))
+  mutate(variable = factor(variable, levels = c("Tw_C","Chla_ugL", "DO_mgL", "SpCond_uScm",  "fDOM_QSU")))
 # Site_id, variable tests
 # Fit the model for surface variables
 model_surface_reorder <- lmer(PE ~ site_id + variable + site_id*variable + (site_id*variable | day), 
@@ -38,8 +41,10 @@ model_surface_reorder <- lmer(PE ~ site_id + variable + site_id*variable + (site
 summary(model_surface_reorder)
 car::Anova(model_surface_reorder, type = 3, test.statistic = 'F')
 
+
+###########################################################
 # ---- Testing for depth/reservoir/variable differences ----
-# Filter to only DO and Tw (that have both depths and sites)
+# Filter to only include DO and Tw (that have both depths and sites)
 PE_ts_P1D_Tw_DO <-  PE_ts_P1D |> 
   filter(variable %in% c('Tw_C', 'DO_mgL'))
 
@@ -52,15 +57,3 @@ model_Tw_DO <- lmer(PE ~ site_id + variable + depth_m +
 # Evaluate model
 summary(model_Tw_DO)
 car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
-
-# Trying to fit a model with all interactions and sites/variables/depths
-# But this is not a balanced design, will this work?
-model_all <- lmer(PE ~ site_id + variable + depth_m + 
-                    variable*depth_m + variable*site_id + site_id*depth_m + 
-                    site_id*variable*depth_m + 
-                    (site_id*variable*depth_m | day),
-                  data = PE_ts_P1D)
-
-# Evaluate model
-summary(model_all)
-car::Anova(model_all, type = 3, test.statistic = 'F')
