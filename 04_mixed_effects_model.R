@@ -23,7 +23,8 @@ model_surface <- lmer(PE ~ site_id + variable + site_id*variable + (site_id*vari
 
 # Evaluate model
 summary(model_surface)
-car::Anova(model_surface, type = 3, test.statistic = 'F')
+Q1_LMM<-car::Anova(model_surface, type = 3, test.statistic = 'F')
+#need to export Q1_LMM to create stats table
 
 
 ## ----- Reorder the factors and check output
@@ -56,4 +57,4 @@ model_Tw_DO <- lmer(PE ~ site_id + variable + depth_m +
 
 # Evaluate model
 summary(model_Tw_DO)
-car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
+Q2_LMM <- car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
