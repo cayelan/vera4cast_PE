@@ -35,7 +35,8 @@ chla_avg <- targets_P1D |>
 
 #Results paragraph 2
 #need to get whole-period PE for all variables
-#how did FEO calculate this?
+sort(1-summary_PE$PE)
+#gives range of minimum and maximum PE
 
 #Results paragraph X
 depth_analysis_DO <- PE_ts_P1D |> 
