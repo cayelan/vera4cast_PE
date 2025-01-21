@@ -11,10 +11,8 @@ source('R/timeseries_functions.R')
 # Get targets ---------------------------------------
 # Get observational target data
 
-fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/8/fbb8c7a0230f4587f1c6e11417fe9dce"
-# bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/4/9adadd2a7c2319e54227ab31a161ea12"
-# using staged data because the conductivity was messed up - update after EDI dayzzzz
-bvre_EDI <- "https://pasta-s.lternet.edu/package/data/eml/edi/157/31/9adadd2a7c2319e54227ab31a161ea12" 
+fcre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/271/9/f23d27b67f71c25cb8e6232af739f986"
+bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/5/f649de0e8a468922b40dcfa34285055e" 
 
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
@@ -22,13 +20,14 @@ bvre_depths <- c(1.5, 13)
 targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
                        is_met = c(F,F),
                        interpolate = T, maxgap = 12) |> 
-  mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', NA)))
+  mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', NA))) 
 
 # targets_PT1H <- downsample(ts = targets, 
 #                            out_freq = 'hourly', 
 #                            method = 'sample', 
 #                            target_out = '00:00',
 #                            max_distance = 20) # 20 minutes either side 
+
 
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
@@ -40,12 +39,6 @@ targets_P1D_av <- downsample(ts = targets,
                              out_freq = 'daily', 
                              method = 'aggregate')
 
-
-# targets_P1W <- downsample(ts = targets, 
-#                           out_freq = 'weekly', 
-#                           method = 'sample', 
-#                           target_out = c('12:00:00', 2), # 2nd DOW ie Tuesday
-#                           max_distance = c(2, 1)) # 2 hours from 12 and 1 day either side
 
 # interpolation?
 targets_P1D_interp <- targets_P1D |> 
