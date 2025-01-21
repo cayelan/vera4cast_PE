@@ -204,7 +204,7 @@ get_temp_profiles <- function(current_file = 'none', historic_file){
                          n = dplyr::n(),
                          .groups = 'drop') |>
         dplyr::mutate(observation = ifelse(n < 144/3, NA, observation), # 144 = 24(hrs) * 6(10 minute intervals/hr)
-                      Reservoir = 'bvre') |>
+                      Reservoir = 'BVR') |>
         
         dplyr::rename(site_id = Reservoir,
                       datetime = date,
@@ -279,7 +279,7 @@ get_temp_profiles <- function(current_file = 'none', historic_file){
                        n = dplyr::n(),
                        .groups = 'drop') |>
       dplyr::mutate(observation = ifelse(n < 144/3, NA, observation), # 144 = 24(hrs) * 6(10 minute intervals/hr)
-                    Reservoir = 'bvre') |>
+                    Reservoir = 'BVR') |>
       dplyr::rename(site_id = Reservoir,
                     datetime = date,
                     depth = depth_bin) |>
