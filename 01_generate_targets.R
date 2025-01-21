@@ -28,7 +28,6 @@ targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
 #                            target_out = '00:00',
 #                            max_distance = 20) # 20 minutes either side 
 
-
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
                           method = 'sample', 
@@ -38,7 +37,6 @@ targets_P1D <- downsample(ts = targets,
 targets_P1D_av <- downsample(ts = targets, 
                              out_freq = 'daily', 
                              method = 'aggregate')
-
 
 # interpolation?
 targets_P1D_interp <- targets_P1D |> 
@@ -59,6 +57,15 @@ targets_P1D_av_interp <- targets_P1D_av |>
   arrange(date) |> 
   mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3)) |> ungroup()
 
+# make it consistent across reservoirs
+start_date <- targets_P1D_interp |> 
+  reframe(.by = c(variable, depth_m, site_id), 
+          start = min(date, na.rm = T)) |> 
+  reframe(last_start = max(start)) |> 
+  pull(last_start)
+
+targets_P1D_interp <- filter(targets_P1D_interp, date > start_date)
+targets_P1D_av_interp <- filter(targets_P1D_av_interp, date > start_date)
 
 # Get temperature profiles
 temp_profiles <- 
