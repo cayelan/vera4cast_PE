@@ -539,3 +539,92 @@ plot_predictions(bam_mod_sChla_2,
 difference_smooths(bam_mod_sChla_2, select = "s(doy)") |>
   draw()
 
+
+
+# Plots for main text
+theme_ms <- function() {
+  theme_bw() +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          panel.grid.minor = element_blank())
+  
+}
+
+library(ggpubr)
+p_sDO <- plot_predictions(bam_mod_sDO_2, 
+                          condition = c('doy', 
+                                        'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Surface DO') +
+  theme_ms()
+
+p_bDO <- plot_predictions(bam_mod_bDO_2, 
+                          condition = c('doy', 
+                                        'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Bottom DO') +
+  theme_ms()
+
+p_sTw <- plot_predictions(bam_mod_sTw_2, 
+                          condition = c('doy', 
+                                        'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Surface Tw') +
+  theme_ms()
+
+p_bTw <- plot_predictions(bam_mod_bTw_2, 
+                          condition = c('doy', 
+                                        'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Bottom Tw') +
+  theme_ms()
+
+p_sfDOM <- plot_predictions(bam_mod_sfDOM_2, 
+                            condition = c('doy', 
+                                          'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Surface fDOM') +
+  theme_ms()
+
+p_sChla <- plot_predictions(bam_mod_sChla_2, 
+                            condition = c('doy', 
+                                          'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Surface Chla') +
+  theme_ms()
+
+p_sSpCond <- plot_predictions(bam_mod_sSpCond_2, 
+                              condition = c('doy', 
+                                            'site_id'))  + 
+  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # labs(subtitle = 'Surface SpCond') +
+  theme_ms()
+
+p_legend <- ggpubr::get_legend(p_sTw)
+
+p_all <- 
+  ggpubr::ggarrange(plotlist = list(NULL, NULL, NULL, NULL, NULL, 
+                                    p_sTw, p_sSpCond,  p_sfDOM, p_sDO, p_sChla,
+                                    p_bTw, as_ggplot(p_legend), NULL, p_bDO, NULL),
+                    nrow = 3, ncol = 5, heights = c(0.2, 1, 1), 
+                    labels = c('Tw', 'SpCond', 'fDOM','DO',  'Chla'),
+                    label.x = 0.6, label.y = 0.6, hjust = 0.5,
+                    font.label = list(size = 12, face = 'bold'),
+                    legend = F) 
+ggpubr::annotate_figure(p_all, 
+                        left = text_grob("Bottom                           Surface",
+                                         face = "bold", size = 12, rot = 90))
