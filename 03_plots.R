@@ -35,7 +35,6 @@ targets_P1D |>
 
 # Figure 4 - PE distributions ####
 summary_PE <- targets_P1D_interp |> 
-  filter(year(date) > 2020) |> 
   mutate(depth_m = factor(depth_m, levels = c( 'surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -53,8 +52,6 @@ summary_PE <- targets_P1D_interp |>
 
 # plot distributions by site
 central_tendancy_PE_sitewise <- PE_ts_P1D |> 
-  filter(depth_m != 'met',
-         year(date) >= 2021) |> 
   na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -75,8 +72,6 @@ central_tendancy_PE_sitewise <- PE_ts_P1D |>
           median = median(predictability)) 
 
 PE_sitewise <- PE_ts_P1D |> 
-  filter(depth_m != 'met',
-         year(date) >= 2021) |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -112,8 +107,6 @@ PE_sitewise <- PE_ts_P1D |>
 
 # plot distributions for both sites
 central_tendancy_PE_combined <-PE_ts_P1D |> 
-  filter(depth_m != 'met',
-         year(date) >= 2021) |> 
   na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -134,8 +127,6 @@ central_tendancy_PE_combined <-PE_ts_P1D |>
           median = median(predictability)) 
 
 PE_combined <- PE_ts_P1D |> 
-  filter(depth_m != 'met',
-         year(date) >= 2021)  |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -200,8 +191,6 @@ anoxia_doy <- targets_P1D |>
   mutate(date = as_date('2023-01-01')) # assign a random date so it can be joined and plotted below
   
 PE_ts_P1D |> 
-  filter(year(date) > 2020 & site_id == 'BVR' | 
-           year(date) > 2018 & site_id == 'FCR')|> 
   full_join(anoxia_doy, join_by(variable, site_id, depth_m, date))  |>  
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -233,7 +222,6 @@ PE_ts_P1D |>
 
 # Figure 6 - seasonal distributions -------------
 central_tendancy_PE_season <-PE_ts_P1D |> 
-  filter(year(date) >= 2021) |> 
   na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -260,7 +248,6 @@ central_tendancy_PE_season <-PE_ts_P1D |>
 
 # faceted by variable instead of season - allows comparison among seasons within variable
 PE_ts_P1D |> 
-  filter(year(date) >= 2021)  |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
