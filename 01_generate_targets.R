@@ -71,7 +71,7 @@ targets_P1D_av_interp <- filter(targets_P1D_av_interp, date > start_date)
 temp_profiles <- 
   map2(c('none', 'none'), c(fcre_EDI, bvre_EDI), get_temp_profiles) |>
   list_rbind() |> 
-  filter(year(datetime) %in% c(2019, 2020, 2021, 2022, 2023))
+  filter(year(datetime) %in% c(2021, 2022, 2023, 2024))
 
 
 strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profiles) |> 
