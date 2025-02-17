@@ -16,6 +16,7 @@ bvre_EDI <- "https://pasta.lternet.edu/package/data/eml/edi/725/5/f649de0e8a4689
 
 fcre_depths <- c(1.6, 9)
 bvre_depths <- c(1.5, 13)
+# these are the top and bottom depths of each reservoir
 
 targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
                        is_met = c(F,F),
@@ -38,7 +39,7 @@ targets_P1D_av <- downsample(ts = targets,
                              out_freq = 'daily', 
                              method = 'aggregate')
 
-# interpolation?
+# interpolation
 targets_P1D_interp <- targets_P1D |> 
   na.omit() |> 
   tsibble::as_tsibble(index = date, key = c(site_id, variable, depth_m)) |> 
