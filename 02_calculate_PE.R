@@ -6,7 +6,7 @@ window_length <- 50 # for a rolling PE how long should the time series be
 
 #======================================================#
 
-# Summmary --------------
+# Summary --------------
 summary_PE <- targets_P1D_interp |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -38,7 +38,7 @@ PE_ts_P1D <- targets_P1D_interp |>
   bind_rows()
 
 
-# Comparison with shuffled reaslisations ------
+# Comparison with shuffled realisations ------
 # Shuffle timeseries and calculate 
 PE_shuffled_P1D <- targets_P1D_shuffled |> 
   reframe(.by = c(variable, site_id, depth_m, n),

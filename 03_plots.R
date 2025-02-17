@@ -1,13 +1,16 @@
 library(ggh4x)
 library(ggridges)
+library(ggpubr)
 # Plots for manuscript
 # Set the hyperparameters for the PE calculations -----
 D = 3
 tau = 1
+
 # Figure 1 = map
-# Figure 2 = conceptual figure
+# Figure 2 = conceptual methods figure
+
 # Figure 3 - observations ####
-targets_P1D |>
+targets_P1D_interp |>
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -23,7 +26,7 @@ targets_P1D |>
                               'without hypolimnetic oxygenation')) |> 
   ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
-  facet_grid(variable~site_id + description, scales = 'free') +
+  facet_grid(variable~site_id + description, scales="free_y") +
   scale_x_date(date_labels = "%d %b %y", breaks = '1 year', name = 'Date') +
   scale_colour_viridis_d(name = '', begin = 0.8, end = 0.4, option = 'viridis') +
   theme_bw() +
@@ -185,7 +188,7 @@ anoxic_length <- function(x, index, threshold = 0) {
 anoxia_doy <- targets_P1D |>
   filter(depth_m == 'bottom', variable == 'DO_mgL', site_id == 'BVR') |> 
   mutate(year = year(date)) |> 
-  summarise(anoxic_length(x = observation, index = date), .by = c(year, depth_m, variable, site_id)) |> 
+  reframe(anoxic_length(x = observation, index = date), .by = c(year, depth_m, variable, site_id)) |> 
   summarise(mean_anoxic_start = median(first),
             mean_anoxic_end = median(last), .by = c(depth_m, variable, site_id)) |> 
   mutate(date = as_date('2023-01-01')) # assign a random date so it can be joined and plotted below
@@ -290,7 +293,7 @@ PE_ts_P1D |>
 
 
 # Supplementary Info plots -----------------
-# Figure S2 - PE of shuffled realisations -----
+# Figure S1 - PE of shuffled realisations -----
 # calculate the p value (how many are more or less than the random)
 full_join(PE_shuffled_P1D, summary_PE,
           by = join_by(variable, site_id, depth_m),

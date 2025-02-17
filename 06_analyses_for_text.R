@@ -1,4 +1,19 @@
 #Script that calculates text-specific statistics/analyses for the manuscript
+library(tidyr)
+
+
+#Methods site description
+BVRdepth <- read.csv(bvre_EDI) |> 
+  filter(DateTime>"2020-06-18") |> 
+  select(DateTime, LvlDepth_m_13) |> 
+  drop_na() |> 
+  summarise(BVRmax_depth = max(LvlDepth_m_13))
+
+FCRdepth <- read.csv(fcre_EDI) |> 
+  filter(DateTime>"2020-06-18") |> 
+  select(DateTime, LvlDepth_m_9) |> 
+  drop_na() |> 
+  summarise(FCRmax_depth = max(LvlDepth_m_9))
 
 #Results paragraph 1
 anoxia_cal <- targets_P1D |>
@@ -6,7 +21,7 @@ anoxia_cal <- targets_P1D |>
          variable=="DO_mgL") |> 
   group_by(site_id) |> 
   count(observation<=2)
-#gives number of days that meet anoxia criteria in both reservoirs
+#gives number of days that meet 2 mg/L DO anoxia criteria in both reservoirs
 
 #Results paragraph 1
 spcond_median <- targets_P1D |> 
