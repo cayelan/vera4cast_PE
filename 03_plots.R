@@ -185,7 +185,7 @@ anoxic_length <- function(x, index, threshold = 0) {
   
 }
 
-anoxia_doy <- targets_P1D |>
+anoxia_doy <- targets_P1D_interp |>
   filter(depth_m == 'bottom', variable == 'DO_mgL', site_id == 'BVR') |> 
   mutate(year = year(date)) |> 
   reframe(anoxic_length(x = observation, index = date), .by = c(year, depth_m, variable, site_id)) |> 
