@@ -14,7 +14,8 @@ surface_Tw_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'Tw_C', 
          depth_m == 'surface') |> 
@@ -29,7 +30,7 @@ surface_Tw_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_sTw <- bam(PE ~ 
+bam_mod_sTw <- bam(predictability ~ 
                  s(doy, bs = 'cc') + 
                  s(doy, by = site_id, bs = 'cc', m = 1) + 
                  site_id,
@@ -47,7 +48,7 @@ bam_mod_sTw <- bam(PE ~
 
 # test for significant autocorrelation
 surface_Tw_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_sTw,
                             type = 'working')) %>%
@@ -61,7 +62,7 @@ surface_Tw_df %>%
 rho_sTw <- itsadug::start_value_rho(bam_mod_sTw, plot = T, lag = 2)
 
 
-bam_mod_sTw_2 <- bam(PE ~ 
+bam_mod_sTw_2 <- bam(predictability ~ 
                   s(doy, bs = 'cc', k = 20) + 
                   s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
                   site_id,
@@ -89,7 +90,8 @@ bottom_DO_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'DO_mgL', 
          depth_m == 'bottom') |> 
@@ -104,7 +106,7 @@ bottom_DO_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_bDO <- bam(PE ~ 
+bam_mod_bDO <- bam(predictability ~ 
                  s(doy, bs = 'cc') + 
                  s(doy, by = site_id, bs = 'cc', m = 1) + 
                  site_id,
@@ -121,7 +123,7 @@ bam_mod_bDO <- bam(PE ~
 
 # test for significant autocorrelation
 bottom_DO_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_bDO,
                             type = 'working')) %>%
@@ -135,7 +137,7 @@ bottom_DO_df %>%
 rho_bDO <- itsadug::start_value_rho(bam_mod_bDO, plot = T, lag = 2)
 
 
-bam_mod_bDO_2 <- bam(PE ~ 
+bam_mod_bDO_2 <- bam(predictability ~ 
                   s(doy, bs = 'cc', k = 10) +
                   s(doy, by = site_id, bs = 'cc', k = 10, m = 1) + 
                   site_id,
@@ -165,7 +167,8 @@ surface_DO_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'DO_mgL', 
          depth_m == 'surface') |> 
@@ -180,7 +183,7 @@ surface_DO_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_sDO <- bam(PE ~ 
+bam_mod_sDO <- bam(predictability ~ 
                      s(doy, bs = 'cc') + 
                      s(doy, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
@@ -197,7 +200,7 @@ bam_mod_sDO <- bam(PE ~
 
 # test for significant autocorrelation
 surface_DO_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_sDO,
                             type = 'working')) %>%
@@ -211,7 +214,7 @@ surface_DO_df %>%
 rho_sDO <- itsadug::start_value_rho(bam_mod_sDO, plot = T, lag = 2)
 
 
-bam_mod_sDO_2 <- bam(PE ~ 
+bam_mod_sDO_2 <- bam(predictability ~ 
                        s(doy, bs = 'cc', k = 20) +
                        s(doy, by = site_id, bs = 'cc', k = 20, m = 1) + 
                        site_id,
@@ -242,7 +245,8 @@ bottom_Tw_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'Tw_C', 
          depth_m == 'bottom') |> 
@@ -257,7 +261,7 @@ bottom_Tw_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_bTw <- bam(PE ~ 
+bam_mod_bTw <- bam(predictability ~ 
                      s(doy, bs = 'cc') + 
                      s(doy, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
@@ -275,7 +279,7 @@ bam_mod_bTw <- bam(PE ~
 
 # test for significant autocorrelation
 bottom_Tw_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_bTw,
                             type = 'working')) %>%
@@ -289,7 +293,7 @@ bottom_Tw_df %>%
 rho_bTw <- itsadug::start_value_rho(bam_mod_bTw, plot = T, lag = 2)
 
 
-bam_mod_bTw_2 <- bam(PE ~ 
+bam_mod_bTw_2 <- bam(predictability ~ 
                        s(doy, bs = 'cc', k = 15) + 
                        s(doy, by = site_id, bs = 'cc', m = 1, k = 15) + 
                        site_id,
@@ -317,7 +321,8 @@ surface_SpCond_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'SpCond_uScm', 
          depth_m == 'surface') |> 
@@ -332,7 +337,7 @@ surface_SpCond_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_sSpCond <- bam(PE ~ 
+bam_mod_sSpCond <- bam(predictability ~ 
                      s(doy, bs = 'cc') + 
                      s(doy, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
@@ -350,7 +355,7 @@ bam_mod_sSpCond <- bam(PE ~
 
 # test for significant autocorrelation
 surface_SpCond_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_sSpCond,
                             type = 'working')) %>%
@@ -364,7 +369,7 @@ surface_SpCond_df %>%
 rho_sSpCond <- itsadug::start_value_rho(bam_mod_sSpCond, plot = T, lag = 2)
 
 
-bam_mod_sSpCond_2 <- bam(PE ~ 
+bam_mod_sSpCond_2 <- bam(predictability ~ 
                        s(doy, bs = 'cc', k = 20) + 
                        s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
                        site_id,
@@ -394,7 +399,8 @@ surface_fDOM_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'fDOM_QSU', 
          depth_m == 'surface') |> 
@@ -409,7 +415,7 @@ surface_fDOM_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_sfDOM <- bam(PE ~ 
+bam_mod_sfDOM <- bam(predictability ~ 
                      s(doy, bs = 'cc') + 
                      s(doy, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
@@ -427,7 +433,7 @@ bam_mod_sfDOM <- bam(PE ~
 
 # test for significant autocorrelation
 surface_fDOM_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_sfDOM,
                             type = 'working')) %>%
@@ -441,7 +447,7 @@ surface_fDOM_df %>%
 rho_sfDOM <- itsadug::start_value_rho(bam_mod_sfDOM, plot = T, lag = 2)
 
 
-bam_mod_sfDOM_2 <- bam(PE ~ 
+bam_mod_sfDOM_2 <- bam(predictability ~ 
                        s(doy, bs = 'cc', k = 20) + 
                        s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
                        site_id,
@@ -470,7 +476,8 @@ surface_Chla_df <- PE_ts_P1D |>
                      sample(.Machine$double.eps*100:.Machine$double.eps*1000, 
                             n(), 
                             replace = TRUE), 
-                     PE)) |> 
+                     PE),
+         predictability = 1 - PE) |> 
   filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
   filter(variable == 'Chla_ugL', 
          depth_m == 'surface') |> 
@@ -485,7 +492,7 @@ surface_Chla_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_sChla <- bam(PE ~ 
+bam_mod_sChla <- bam(predictability ~ 
                        s(doy, bs = 'cc') + 
                        s(doy, by = site_id, bs = 'cc', m = 1) + 
                        site_id,
@@ -503,7 +510,7 @@ bam_mod_sChla <- bam(PE ~
 
 # test for significant autocorrelation
 surface_Chla_df %>%
-  filter(!is.na(PE)) |> 
+  filter(!is.na(predictability)) |> 
   ungroup() |> 
   mutate(resids = residuals(bam_mod_sChla,
                             type = 'working')) %>%
@@ -517,7 +524,7 @@ surface_Chla_df %>%
 rho_sChla <- itsadug::start_value_rho(bam_mod_sChla, plot = T, lag = 2)
 
 
-bam_mod_sChla_2 <- bam(PE ~ 
+bam_mod_sChla_2 <- bam(predictability ~ 
                          s(doy, bs = 'cc', k = 20) + 
                          s(doy, by = site_id, bs = 'cc', k=20, m=1) + 
                          site_id,
