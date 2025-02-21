@@ -33,7 +33,7 @@ PE_ts_P1D <- targets_P1D_interp |>
                             time_col = 'date', 
                             window_width = window_length,
                             tie_method = 'first', 
-                            D = 3, tau = 1, 
+                            D = D, tau = tau, 
                             use_weights = T)) |> 
   bind_rows()
 
