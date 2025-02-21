@@ -181,14 +181,14 @@ ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T,
 ## 2. Modification of hyperparameters
 
 ```{r set-hyperparameters-new}
-D  <- 4 # length of the word, embedding dimension
+D  <- 5 # length of the word, embedding dimension
 tau <- 1 # embedding time delay
 window_length <- 50 # for a rolling PE how long should the time series be
 ```
 
 This chunk generates the single PE value for each site-variable-depth combination. 
 ```{r summary-P1D-new}
-summary_PE <- targets_P1D_interp |> 
+summary_PE_alt <- targets_P1D_interp |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -205,7 +205,7 @@ print(summary_PE, n = 15)
 
 This chunk generates the time series of PE for each site-variable-depth combination based on the moving window calculation. 
 ```{r full_ts-P1D-new, warning=FALSE, message=FALSE}
-PE_ts_P1D <- targets_P1D_interp |> 
+PE_ts_P1D_alt <- targets_P1D_interp |> 
   group_by(site_id, variable, depth_m) |> 
   group_split() |> 
   map(.f = ~calculate_PE_ts(x = .x,
@@ -216,13 +216,13 @@ PE_ts_P1D <- targets_P1D_interp |>
                             use_weights = T)) |> 
   bind_rows()
 
-head(PE_ts_P1D)
+head(PE_ts_P1D_alt)
 ```
 
 ### With new hyperparameters
 ```{r distributions-new, echo=FALSE, message=FALSE}
 # plot distributions by site
-central_tendancy_PE_sitewise <- PE_ts_P1D |> 
+central_tendancy_PE_sitewise <- PE_ts_P1D_alt |> 
   na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -242,7 +242,7 @@ central_tendancy_PE_sitewise <- PE_ts_P1D |>
           CDF = mean(predictability >= 0.5),
           median = median(predictability)) 
 
-PE_sitewise <- PE_ts_P1D |> 
+PE_sitewise <- PE_ts_P1D_alt |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
@@ -277,7 +277,7 @@ PE_sitewise <- PE_ts_P1D |>
         strip.background = element_rect(fill = 'white', colour = NA)) 
 
 # plot distributions for both sites
-central_tendancy_PE_combined <-PE_ts_P1D |> 
+central_tendancy_PE_combined <-PE_ts_P1D_alt |> 
   na.omit() |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -297,7 +297,7 @@ central_tendancy_PE_combined <-PE_ts_P1D |>
           CDF = mean(predictability >= 0.5),
           median = median(predictability)) 
 
-PE_combined <- PE_ts_P1D |> 
+PE_combined <- PE_ts_P1D_alt |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
