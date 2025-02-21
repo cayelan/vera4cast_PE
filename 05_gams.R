@@ -16,7 +16,7 @@ surface_Tw_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'Tw_C', 
          depth_m == 'surface') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -91,8 +91,13 @@ bottom_DO_df <- PE_ts_P1D |>
                             n(), 
                             replace = TRUE), 
                      PE),
-         predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+         predictability = 1 - PE,
+         #recode the sites to have fcr split into DO and non-DO years
+         site_id = ifelse(site_id == 'FCR' & date < as_date('2023-01-01'),
+                          'FCR_anoxic', ifelse(site_id == 'FCR' & date >= as_date('2023-01-01'),
+                                               'FCR_oxic',
+                                               'BVR'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'DO_mgL', 
          depth_m == 'bottom') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -106,20 +111,21 @@ bottom_DO_df <- PE_ts_P1D |>
   mutate(time = as.numeric(date))
 
 
-bam_mod_bDO <- bam(predictability ~ 
-                 s(doy, bs = 'cc') + 
-                 s(doy, by = site_id, bs = 'cc', m = 1) + 
-                 site_id,
-               family = betar(link = 'logit'),
-               method = "fREML",
-               data = bottom_DO_df, discrete = T)
 
-# summary(bam_mod_bDO)
-# draw(bam_mod_bDO)
-# 
-# gam.check(bam_mod_bDO)
-# pacf(residuals(bam_mod_bDO,
-#                type = 'working'))
+bam_mod_bDO <- bam(predictability ~ 
+                     s(doy, bs = 'cc', k= 10) + 
+                     s(doy, by = site_id, bs = 'cc', k = 10, m = 1) + 
+                     site_id,
+                   family = betar(link = 'logit'),
+                   method = "fREML",
+                   data = bottom_DO_df, discrete = T)
+
+summary(bam_mod_bDO)
+draw(bam_mod_bDO)
+
+gam.check(bam_mod_bDO)
+pacf(residuals(bam_mod_bDO,
+               type = 'working'))
 
 # test for significant autocorrelation
 bottom_DO_df %>%
@@ -138,15 +144,15 @@ rho_bDO <- itsadug::start_value_rho(bam_mod_bDO, plot = T, lag = 2)
 
 
 bam_mod_bDO_2 <- bam(predictability ~ 
-                  s(doy, bs = 'cc', k = 10) +
-                  s(doy, by = site_id, bs = 'cc', k = 10, m = 1) + 
-                  site_id,
-                family = betar(link = 'logit'),
-                method = "fREML",
-                data = bottom_DO_df, 
-                discrete = T, 
-                AR.start = bottom_DO_df$ar.start,
-                rho = rho_bDO)
+                       s(doy, bs = 'cc', k = 12) +
+                       s(doy, by = site_id, bs = 'cc', k = 12, m = 1) + 
+                       site_id,
+                     family = betar(link = 'logit'),
+                     method = "fREML",
+                     data = bottom_DO_df, 
+                     discrete = T, 
+                     AR.start = bottom_DO_df$ar.start,
+                     rho = rho_bDO)
 
 summary(bam_mod_bDO_2)
 
@@ -169,7 +175,7 @@ surface_DO_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'DO_mgL', 
          depth_m == 'surface') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -247,7 +253,7 @@ bottom_Tw_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'Tw_C', 
          depth_m == 'bottom') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -323,7 +329,7 @@ surface_SpCond_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'SpCond_uScm', 
          depth_m == 'surface') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -401,7 +407,7 @@ surface_fDOM_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'fDOM_QSU', 
          depth_m == 'surface') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -478,7 +484,7 @@ surface_Chla_df <- PE_ts_P1D |>
                             replace = TRUE), 
                      PE),
          predictability = 1 - PE) |> 
-  filter(between(date, as_date('2021-01-01'), as_date('2023-12-31'))) |> 
+  filter(between(date, as_date('2021-01-01'), as_date('2024-12-31'))) |> 
   filter(variable == 'Chla_ugL', 
          depth_m == 'surface') |> 
   mutate(depth_m = factor(depth_m,ordered = F),
@@ -548,7 +554,7 @@ difference_smooths(bam_mod_sChla_2, select = "s(doy)") |>
 
 
 
-# Plots for main text
+# Plots for main text ----
 theme_ms <- function() {
   theme_bw() +
     theme(legend.position = "bottom",
@@ -567,14 +573,22 @@ p_sDO <- plot_predictions(bam_mod_sDO_2,
   # labs(subtitle = 'Surface DO') +
   theme_ms()
 
+man_colours <- viridis::rocket(n=2, begin = 0.8, end=0.2)
+
 p_bDO <- plot_predictions(bam_mod_bDO_2, 
                           condition = c('doy', 
-                                        'site_id'))  + 
-  scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
-  scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
+                                        'site_id'), 
+                          draw = F) |> 
+  # manually make the plot to use linetype
+  ggplot(aes(x=doy)) +
+  geom_line(aes(y=estimate, linetype = site_id, colour = site_id)) +
+  geom_ribbon(aes(ymax = conf.high, ymin = conf.low, fill = site_id), alpha = 0.1) +
+  scale_colour_manual(values = c(man_colours[1], man_colours[2], man_colours[2])) +
+  scale_fill_manual(values = c(man_colours[1], man_colours[2], man_colours[2])) +
+  scale_linetype_manual(values = c('solid', 'solid', 'dashed')) +
   scale_y_continuous(limits = c(0, 1)) +
-  # labs(subtitle = 'Bottom DO') +
-  theme_ms()
+  labs(y = 'predictability') +
+  theme_ms()   
 
 p_sTw <- plot_predictions(bam_mod_sTw_2, 
                           condition = c('doy', 
