@@ -19,10 +19,21 @@ summary_PE <- targets_P1D_interp |>
 
 #======================================================#
 
-# PE_resampled_P1D <- targets_P1D_resample |> 
-#   group_by(n, site_id, variable, depth_m, doy) |> 
-#   summarise(PE = calculate_PE(observation, D = D, tau = tau, use_weights = T, ignore_gaps = T),
-#             .groups = 'drop')
+# Comparison with shuffled realisations ------
+# Shuffle timeseries and calculate 
+PE_shuffled_P1D <- targets_P1D_shuffled |> 
+  reframe(.by = c(variable, site_id, depth_m, n),
+          PE = calculate_PE(observation, D = D, tau = tau))
+
+# compare the shuffled values with the calculated values in the summary to obtain a p-value
+summary_PE |> 
+  rename(summary_PE = PE) |> 
+  full_join(PE_shuffled_P1D, by = join_by(site_id, variable, depth_m)) |> ungroup() |> 
+  # is the value greater/less than the summary value
+  reframe(.by = c(site_id, variable, depth_m),
+          mean = mean(PE),
+          sd = sd(PE),
+          p = sum(ifelse(PE < summary_PE, 1, 0))/n())
 
 #================================#
 # Rolling window of PE ---------
@@ -37,11 +48,5 @@ PE_ts_P1D <- targets_P1D_interp |>
                             use_weights = T)) |> 
   bind_rows()
 
-
-# Comparison with shuffled realisations ------
-# Shuffle timeseries and calculate 
-PE_shuffled_P1D <- targets_P1D_shuffled |> 
-  reframe(.by = c(variable, site_id, depth_m, n),
-          PE = calculate_PE(observation, D = D, tau = tau))
 
 
