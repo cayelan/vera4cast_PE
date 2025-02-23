@@ -4,12 +4,9 @@
 #' @param interpolate should interpolation be carried out
 #' @return a targets dataframe in VERA format
 
-get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
-  
-  met_files <- infiles[is_met] 
-  message('processing ', length(met_files), ' met file(s)')
-  wq_files <- infiles[!is_met]
-  message('processing ', length(wq_files), ' wq file(s)')
+get_targets <- function(infiles, interpolate = T, maxgap = 12) {
+
+  message('processing wq file(s)')
   
   standard_names <- data.frame(variable_new = c('Tw_C','SpCond_uScm', 'Chla_ugL', 'fDOM_QSU'),
                                variable = c('EXOTemp_C_1', 'EXOSpCond_uScm_1', 'EXOChla_ugL_1', 'EXOfDOM_QSU_1'))
@@ -94,14 +91,8 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
     
     targets_wq <- bind_rows(targets_wq, df_all) 
   }
-  
-  if (length(met_files) != 0) {
-    targets_met <- get_met(infiles = met_files, interpolate = interpolate, maxgap = maxgap)
-  } else {
-    targets_met <- NULL
-  }
-  
-  targets <- bind_rows(targets_met, targets_wq)
+ 
+  targets <- targets_wq
   
   if (interpolate == T) {
     test <- targets |> 
@@ -116,56 +107,6 @@ get_targets <- function(infiles, interpolate = T, maxgap = 12, is_met = F) {
 
 # ================================================================#
 
-get_met  <- function(infiles, interpolate = T, maxgap =12) {
-  
-  standard_names <- data.frame(variable_new = c('AirTemp_C'),
-                               variable = c('AirTemp_C_Average'))
-  targets <- NULL
-  
-  # Load data
-  message('Reading met data from EDI...')
-  for (i in 1:length(infiles)) {
-    df <- suppressWarnings(read_csv(infiles[i], show_col_types = F, progress = F)) |> 
-      filter(Site == 50) |> 
-      # mutate(site_id = ifelse(Reservoir == 'BVR', 'bvre', ifelse(Reservoir == 'FCR', 'fcre', Reservoir))) |> 
-      rename(datetime = DateTime,
-             site_id = Reservoir) |> 
-      filter(site_id %in% c('FCR', 'BVR')) |> 
-      select(-Site)
-    
-    df_flags <- df |> 
-      select(any_of(c('datetime', 'site_id')) | contains('Flag') & contains(standard_names$variable)) |> 
-      pivot_longer(cols = contains('Flag'),
-                   names_to = 'variable', 
-                   values_to = 'flag_value', 
-                   names_prefix = 'Flag_')
-    
-    df_observations <- df |> 
-      select(any_of(c('datetime', 'site_id')) | contains(standard_names$variable) & !contains('Flag') & !contains('Note')) |> 
-      pivot_longer(cols = -any_of(c('site_id', 'datetime')),
-                   names_to = 'variable', 
-                   values_to = 'observation', 
-                   names_prefix = 'Flag_')
-    
-    
-    # Filter any flagged data
-    message('Filtering flags...')
-    df_long <- inner_join(df_observations, df_flags, 
-                          # by = c('site_id', 'datetime', 'depth_m', 'variable'),
-                          relationship = 'many-to-many') |> 
-      na.omit() |> 
-      filter(!flag_value %in% c(9, 7, 2, 1, 5, 3, 4)) |> 
-      select(-contains('flag')) |> 
-      full_join(standard_names) |> 
-      mutate(variable = variable_new) |> 
-      select(-variable_new)
-    
-    
-    targets <- bind_rows(targets, df_long) 
-  }
-  
-  return(targets)
-}
 
 # =================== Temperature profiles ==================
 
@@ -424,87 +365,4 @@ calc_strat_dates <- function(density_diff = 0.1,
   }
   
   return(na.omit(strat_dates))
-}
-
-
-get_targets_sample  <- function(infiles, start_date, end_date) {
-  
-  # list of standardised column names
-  standard_names <- c(site_id = "Reservoir", 
-                      depth_m = "Depth_m",
-                      datetime = "DateTime")
-  
-  final_df <- NULL
-  
-  for (i in 1:length(infiles)) {
-    
-    df <- read_csv(infiles[i], show_col_types = F, progress = F) |> 
-      filter(Site == 50) |> 
-      rename(any_of(standard_names))  |> 
-      # mutate(site_id = ifelse(site_id == 'BVR', 'bvre', ifelse(site_id == 'FCR', 'fcre', site_id))) |> 
-      filter(site_id %in% c('FCR', 'BVR')) |> 
-      select(-Site)
-    
-    df_flags <- df |> 
-      select(any_of(c('datetime', 'site_id', 'depth_m')) | contains('Flag')) |> 
-      pivot_longer(cols = contains('Flag'),
-                   names_to = 'variable', 
-                   values_to = 'flag_value', 
-                   names_prefix = 'Flag_')
-    
-    df_observations <- df |> 
-      select(-contains('Flag')) |> 
-      pivot_longer(cols = -any_of(c('site_id', 'datetime', 'depth_m', 'Rep')),
-                   names_to = 'variable', 
-                   values_to = 'observation', 
-                   names_prefix = 'Flag_')
-    
-    df_long <- inner_join(df_observations, df_flags, 
-                          # by = c('site_id', 'datetime', 'depth_m', 'variable'),
-                          relationship = 'many-to-many') |> 
-      na.omit() |> 
-      filter(!flag_value %in% c(9, 5, 2)) |> 
-      select(-contains('flag')) |> 
-      group_by(pick(any_of(c('site_id', 'datetime', 'depth_m', 'variable')))) |> 
-      summarise(observation = mean(observation), .groups = 'drop')
-    
-    
-    # Combine with other dataframe
-    final_df <- bind_rows(final_df, df_long) |> mutate(method = 'sample')
-    
-  }
-  
- return(final_df) 
-}
-
-max_na <- function(ts) {
-  rle_na <- rle(is.na(ts))
-  
-  rle_na <- data.frame(value = rle_na$values,
-                       length = rle_na$lengths) 
-  
-  if (sum(rle_na$value == T) > 0) {
-    longest_na <- rle_na |> 
-      filter(value == T) |> 
-      summarise(max(length)) |> 
-      pull()
-  } else {
-    longest_na <- 0
-  }
-  return(longest_na)
-}
-
-
-n_cont <- function(ts) {
-  
-  rle_na <- rle(is.na(ts))
-  
-  rle_na <- data.frame(value = rle_na$values,
-                       length = rle_na$lengths) 
-  
-  n_cont <- rle_na |> 
-    filter(value == F) |> 
-    summarise(n()) |> pull()
-  
-  return(n_cont)
 }
