@@ -1,3 +1,10 @@
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: generates plots for manuscript
+## Date: 2025-02-23
+## Author: Freya Olsson, Cayelan Carey
+#--------------------------------------#
+
 library(ggh4x)
 library(ggridges)
 library(ggpubr)

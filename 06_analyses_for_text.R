@@ -1,4 +1,10 @@
-#Script that calculates text-specific statistics/analyses for the manuscript
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: Calculates text-specific statistics/analyses for the manuscript
+## Date: 2025-02-23
+## Author: Cayelan Carey
+#--------------------------------------#
+
 library(tidyr)
 
 

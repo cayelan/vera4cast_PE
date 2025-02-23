@@ -1,6 +1,11 @@
-# Linear mixed effects models
-# written by Freya Olsson & Cayelan Carey
-# 20 January 2024
+
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: Fits linear mixed effects models
+## Date: 2025-01-20
+## Author: Cayelan Carey, Freya Olsson
+#--------------------------------------#
+
 
 # PE linear mixed effects model 
 library(lme4)

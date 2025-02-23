@@ -1,3 +1,11 @@
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: calculates permutation entropy (PE) on time series observations
+## as a summary (single value), moving window (PE timeseries), and on white noise ts
+## Date: 2025-02-23
+## Author: Freya Olsson
+#--------------------------------------#
+
 # =====================================================#
 # Set parameters for PE calculations
 D  <- 3 # length of the word, embedding dimension

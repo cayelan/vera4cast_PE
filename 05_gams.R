@@ -1,3 +1,10 @@
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: Fits generalised additive linear models
+## Date: 2025-02-23
+## Author: Freya Olsson
+#--------------------------------------#
+
 library(tidyverse)
 library(mgcv)
 library(lubridate)

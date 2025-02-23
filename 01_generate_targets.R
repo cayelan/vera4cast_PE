@@ -1,3 +1,11 @@
+#--------------------------------------#
+## Project: vera4cast PE
+## Script purpose: Script to read in, interpolate and downsample raw timeseries target data. 
+## Data read in from EDI. 
+## Date: 2025-02-23
+## Author: Freya Olsson
+#--------------------------------------#
+
 library(tidyverse)
 library(zoo)
 library(RCurl)
@@ -19,7 +27,6 @@ bvre_depths <- c(1.5, 13)
 # these are the top and bottom depths of each reservoir
 
 targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
-                       is_met = c(F,F),
                        interpolate = T, maxgap = 12) |> 
   mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', NA))) 
 
@@ -79,20 +86,6 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
   mutate(start = as_date(start),
          end = as_date(end))
 
-
-# Resample timeseries
-# resample_length <- 50 # how long are the sections?
-# resample_n <- 500 # how many times should the timeseries be sampled
-# targets_P1D_resample <- targets_P1D |>
-#   filter(year(date) >= 2021) |> # only the years where there are the same data
-#   na.omit() |> 
-#   tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
-#   arrange(variable, depth_m, site_id, date) |> 
-#   reframe(.by = c(variable, site_id, depth_m),
-#           resample(ts = observation, 
-#                    length.out = resample_length, 
-#                    n = resample_n, 
-#                    doy = date))
 
 # Generate shuffles
 targets_P1D_shuffled <- targets_P1D_interp |>
