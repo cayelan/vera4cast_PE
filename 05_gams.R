@@ -5,7 +5,7 @@ library(gratia)
 library(marginaleffects)
 
 # PE_ts_P1D <- read_csv('temp_dat.csv')
-
+write_model_output <- TRUE
 
 # Surface Tw ----------------------
 # Filter the data for each model
@@ -649,3 +649,31 @@ p_all <-
 ggpubr::annotate_figure(p_all, 
                         left = text_grob("Bottom                           Surface",
                                          face = "bold", size = 12, rot = 90))
+
+# Write output -----
+# Write the model output
+if (write_model_output == T) {
+  final_fitted_models <- ls(pattern = '^bam.*2$')
+  
+  dev.table <- NULL
+  
+  for (i in 1:length(final_fitted_models)) {
+    
+    mod <- get(final_fitted_models[i])
+    par_terms <- broom::tidy(mod, parametric = T) 
+    s_terms <- broom::tidy(mod, parametric = F) 
+    
+    bind_rows(par_terms, s_terms)  |> 
+      write_csv(file = paste0(final_fitted_models[i],'_summary.csv'))
+    
+    # recalculate the explained deviance
+    dev.expl <- data.frame(mod = final_fitted_models[i],
+                           dev.expl = (mod$null.deviance - mod$deviance) / mod$null.deviance *100,
+                           n = mod$df.null)
+    
+    dev.table <- bind_rows(dev.table, dev.expl)
+   
+  }
+  write_csv(dev.table, 'deviance_explained_GAMs.csv')
+}
+
