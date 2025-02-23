@@ -656,24 +656,31 @@ if (write_model_output == T) {
   final_fitted_models <- ls(pattern = '^bam.*2$')
   
   dev.table <- NULL
-  
+  gam_param <- NULL
   for (i in 1:length(final_fitted_models)) {
+    mod_name <- str_split_1(final_fitted_models[i],'_')[3]
     
     mod <- get(final_fitted_models[i])
     par_terms <- broom::tidy(mod, parametric = T) 
     s_terms <- broom::tidy(mod, parametric = F) 
     
-    bind_rows(par_terms, s_terms)  |> 
-      write_csv(file = paste0(final_fitted_models[i],'_summary.csv'))
+    gam_param <- bind_rows(par_terms, s_terms)  |> 
+      mutate(mod = mod_name) |> 
+      bind_rows(gam_param)
     
     # recalculate the explained deviance
-    dev.expl <- data.frame(mod = final_fitted_models[i],
+    dev.expl <- data.frame(mod = mod_name,
                            dev.expl = (mod$null.deviance - mod$deviance) / mod$null.deviance *100,
                            n = mod$df.null)
     
-    dev.table <- bind_rows(dev.table, dev.expl)
+    dev.table <- bind_rows(dev.expl, dev.table)
    
   }
-  write_csv(dev.table, 'deviance_explained_GAMs.csv')
+  gam_param |> 
+    mutate(across(where(is.numeric), ~round(.x, digits = 3))) |> 
+    write_csv('summary_GAMs.csv')
+  dev.table |> 
+    mutate(across(where(is.numeric), ~round(.x, digits = 3))) |> 
+    write_csv('deviance_explained_GAMs.csv')
 }
 
