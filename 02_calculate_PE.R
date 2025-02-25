@@ -37,11 +37,17 @@ PE_shuffled_P1D <- targets_P1D_shuffled |>
 summary_PE |> 
   rename(summary_PE = PE) |> 
   full_join(PE_shuffled_P1D, by = join_by(site_id, variable, depth_m)) |> ungroup() |> 
+  mutate(summary_predictability = 1 - summary_PE,
+         predictability = 1 - PE) |> 
   # is the value greater/less than the summary value
   reframe(.by = c(site_id, variable, depth_m),
-          mean = mean(PE),
-          sd = sd(PE),
-          p = sum(ifelse(PE < summary_PE, 1, 0))/n())
+          n = n(),
+          mean = mean(predictability),
+          sd = sd(predictability),
+          p = sum(ifelse(predictability > summary_predictability, 1, 0))/n()) |> 
+  full_join(summary_PE) |> 
+  mutate(full_ts_predictability = 1 - PE) |> 
+  select(site_id, variable, depth_m, full_ts_predictability, n, mean, sd, p)
 
 #================================#
 # Rolling window of PE ---------
