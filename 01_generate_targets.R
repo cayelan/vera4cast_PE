@@ -95,9 +95,4 @@ targets_P1D_shuffled <- targets_P1D_interp |>
   reframe(.by = c(variable, site_id, depth_m),
           shuffle(ts = observation, times = 500))
 
-targets_P1D_av_shuffled <- targets_P1D_av_interp |>
-  na.omit() |> 
-  tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
-  arrange(variable, depth_m, site_id, date) |>
-  reframe(.by = c(variable, site_id, depth_m),
-          shuffle(ts = observation, times = 500))
+
