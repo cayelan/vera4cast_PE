@@ -47,8 +47,9 @@ summary_PE |>
           p = sum(ifelse(predictability > summary_predictability, 1, 0))/n()) |> 
   full_join(summary_PE) |> 
   mutate(full_ts_predictability = 1 - PE) |> 
-  select(site_id, variable, depth_m, full_ts_predictability, n, mean, sd, p)
-
+  select(site_id, variable, depth_m, full_ts_predictability, n, mean, sd, p) |> 
+  mutate(across(where(is.numeric), ~round(.x, digits = 3))) |> 
+  write_csv('shuffled_PE_stats.csv')
 #================================#
 # Rolling window of PE ---------
 PE_ts_P1D <- targets_P1D_interp |> 
