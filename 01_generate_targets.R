@@ -30,11 +30,6 @@ targets <- get_targets(infiles = c(fcre_EDI, bvre_EDI),
                        interpolate = T, maxgap = 12) |> 
   mutate(depth_m = ifelse(depth_m < 5, 'surface', ifelse(depth_m > 5, 'bottom', NA))) 
 
-# targets_PT1H <- downsample(ts = targets, 
-#                            out_freq = 'hourly', 
-#                            method = 'sample', 
-#                            target_out = '00:00',
-#                            max_distance = 20) # 20 minutes either side 
 
 targets_P1D <- downsample(ts = targets, 
                           out_freq = 'daily', 
@@ -42,9 +37,6 @@ targets_P1D <- downsample(ts = targets,
                           target_out = '12:00:00',
                           max_distance = 2) # 2 hours either side
 
-targets_P1D_av <- downsample(ts = targets, 
-                             out_freq = 'daily', 
-                             method = 'aggregate')
 
 # interpolation
 targets_P1D_interp <- targets_P1D |> 
@@ -56,14 +48,6 @@ targets_P1D_interp <- targets_P1D |>
   arrange(date) |> 
   mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3)) |> ungroup()
 
-targets_P1D_av_interp <- targets_P1D_av |> 
-  na.omit() |> 
-  tsibble::as_tsibble(index = date, key = c(site_id, variable, depth_m)) |> 
-  tsibble::fill_gaps() |> 
-  as_tibble() |> 
-  group_by(variable, site_id, depth_m) |> 
-  arrange(date) |> 
-  mutate(observation = zoo::na.approx(observation, na.rm = T, maxgap = 3)) |> ungroup()
 
 # make it consistent across reservoirs
 start_date <- targets_P1D_interp |> 
@@ -73,7 +57,6 @@ start_date <- targets_P1D_interp |>
   pull(last_start)
 
 targets_P1D_interp <- filter(targets_P1D_interp, date > start_date)
-targets_P1D_av_interp <- filter(targets_P1D_av_interp, date > start_date)
 
 # Get temperature profiles
 temp_profiles <- 
@@ -94,5 +77,3 @@ targets_P1D_shuffled <- targets_P1D_interp |>
   arrange(variable, depth_m, site_id, date) |>
   reframe(.by = c(variable, site_id, depth_m),
           shuffle(ts = observation, times = 500))
-
-
