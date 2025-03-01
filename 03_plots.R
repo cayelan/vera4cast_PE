@@ -29,8 +29,8 @@ targets_P1D_interp |>
                                       'fDOM_QSU',
                                       'DO_mgL',
                                       'Chla_ugL')),
-         description = ifelse(site_id == 'FCR', 'with hypolimnetic oxygenation',
-                              'without hypolimnetic oxygenation')) |> 
+         description = ifelse(site_id == 'FCR', 'with oxygenation',
+                              'without oxygenation')) |> 
   ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
   facet_grid(variable~site_id + description, scales="free_y") +
@@ -56,7 +56,7 @@ summary_PE <- targets_P1D_interp |>
                                       'fDOM_QSU',
                                       'DO_mgL',
                                       'Chla_ugL')),
-         description = ifelse(site_id == 'FCR', 'with hypolimnetic oxygenation', 'without hypolimnetic oxygenation')) |> 
+         description = ifelse(site_id == 'FCR', 'with oxygenation', 'without oxygenation')) |> 
   group_by(site_id, variable, depth_m, description) |> 
   summarise(PE = calculate_PE(observation, D = D, tau = tau))
 
@@ -74,7 +74,7 @@ central_tendancy_PE_sitewise <- PE_ts_P1D |>
                                       'fDOM_QSU',
                                       'DO_mgL',
                                       'Chla_ugL')),
-         description = ifelse(site_id == 'FCR', 'with hypolimnetic oxygenation', 'without hypolimnetic oxygenation'),
+         description = ifelse(site_id == 'FCR', 'with oxygenation', 'without oxygenation'),
          predictability = 1-PE) |> 
   reframe(.by = c(variable, depth_m, site_id, description),
           quantile_80 = quantile(predictability, 0.2),
@@ -93,7 +93,7 @@ PE_sitewise <- PE_ts_P1D |>
                                       'fDOM_QSU',
                                       'DO_mgL',
                                       'Chla_ugL')),
-         description = ifelse(site_id == 'FCR', 'with hypolimnetic oxygenation', 'without hypolimnetic oxygenation'),
+         description = ifelse(site_id == 'FCR', 'with oxygenation', 'without oxygenation'),
          predictability = 1-PE) |> 
   na.omit() |> 
   ggplot()+
@@ -213,7 +213,7 @@ PE_shuffled_P1D |>
   theme_bw()  + 
   labs(x='predictability') +
   scale_colour_manual(name = '', values = viridis::mako(n=2, begin = 0.8, end = 0.2), 
-                      labels = c('FCR - with hypolimnetic oxygenation', 
+                      labels = c('FCR - with oxygenation', 
                                  'BVR - without hypolimentic oxygenation')) +
   theme(panel.grid.minor = element_blank(),
         strip.background = element_rect(fill = 'white'),
@@ -238,8 +238,8 @@ PE_ts_P1D |>
                                       'fDOM_QSU',
                                       'DO_mgL',
                                       'Chla_ugL')),
-         description = ifelse(site_id == 'FCR', 'with hypolimnetic oxygenation',
-                              'without hypolimnetic oxygenation'),
+         description = ifelse(site_id == 'FCR', 'with oxygenation',
+                              'without oxygenation'),
          predictability = 1 - PE) |> 
   ggplot(aes(x=date, y=predictability, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
