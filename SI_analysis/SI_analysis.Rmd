@@ -171,7 +171,7 @@ PE_sitewise <- PE_ts_P1D_alt |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2)) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -226,7 +226,7 @@ PE_combined <- PE_ts_P1D_alt |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -234,10 +234,12 @@ PE_combined <- PE_ts_P1D_alt |>
         strip.background = element_rect(fill = 'white', colour = NA), 
         panel.spacing.x = unit(1, "lines")) 
 
-ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
+Fig_S1 <- ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
                   widths = c(1,1.75), align = 'h',
-                  labels = c('(a)', '(b)')) |> 
-  ggsave(filename = 'Figure_S1.png', width = 25, height = 15, units = 'cm')
+                  labels = c('(a)', '(b)')) 
+Fig_S1
+Fig_S1|> 
+  ggsave(filename = '../Figure_S1.png', width = 25, height = 15, units = 'cm')
 
 ```
 
@@ -331,7 +333,7 @@ PE_sitewise <- PE_ts_P1D_av |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2)) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -386,7 +388,7 @@ PE_combined <- PE_ts_P1D_av |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -394,10 +396,12 @@ PE_combined <- PE_ts_P1D_av |>
         strip.background = element_rect(fill = 'white', colour = NA), 
         panel.spacing.x = unit(1, "lines")) 
 
-ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
+Fig_S5 <- ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
                   widths = c(1,1.75), align = 'h',
-                  labels = c('(a)', '(b)')) |> 
-  ggsave(filename = 'Figure_S5.png', width = 25, height = 15, units = 'cm')
+                  labels = c('(a)', '(b)'))
+Fig_S5
+Fig_S5|> 
+  ggsave(filename = '../Figure_S5.png', width = 25, height = 15, units = 'cm')
 
 ```
 
