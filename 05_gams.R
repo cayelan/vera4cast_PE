@@ -29,7 +29,7 @@ surface_Tw_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -38,8 +38,8 @@ surface_Tw_df <- PE_ts_P1D |>
 
 
 bam_mod_sTw <- bam(predictability ~ 
-                 s(doy, bs = 'cc') + 
-                 s(doy, by = site_id, bs = 'cc', m = 1) + 
+                 s(Day, bs = 'cc') + 
+                 s(Day, by = site_id, bs = 'cc', m = 1) + 
                  site_id,
                family = betar(link = 'logit'),
                method = "fREML",
@@ -60,7 +60,7 @@ surface_Tw_df %>%
   mutate(resids = residuals(bam_mod_sTw,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -70,8 +70,8 @@ rho_sTw <- itsadug::start_value_rho(bam_mod_sTw, plot = T, lag = 2)
 
 
 bam_mod_sTw_2 <- bam(predictability ~ 
-                  s(doy, bs = 'cc', k = 20) + 
-                  s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
+                  s(Day, bs = 'cc', k = 20) + 
+                  s(Day, by = site_id, bs = 'cc', k=20, m = 1) + 
                   site_id,
                 family = betar(link = 'logit'),
                 method = "fREML",
@@ -85,10 +85,10 @@ summary(bam_mod_sTw_2)
 draw(bam_mod_sTw_2)
 gam.check(bam_mod_sTw_2)
 plot_predictions(bam_mod_sTw_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_sTw_2, select = "s(doy)") |>
+difference_smooths(bam_mod_sTw_2, select = "s(Day)") |>
   draw()
 
 # Bottom DO ----------------------
@@ -110,7 +110,7 @@ bottom_DO_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -120,8 +120,8 @@ bottom_DO_df <- PE_ts_P1D |>
 
 
 bam_mod_bDO <- bam(predictability ~ 
-                     s(doy, bs = 'cc', k= 10) + 
-                     s(doy, by = site_id, bs = 'cc', k = 10, m = 1) + 
+                     s(Day, bs = 'cc', k= 10) + 
+                     s(Day, by = site_id, bs = 'cc', k = 10, m = 1) + 
                      site_id,
                    family = betar(link = 'logit'),
                    method = "fREML",
@@ -141,7 +141,7 @@ bottom_DO_df %>%
   mutate(resids = residuals(bam_mod_bDO,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -151,8 +151,8 @@ rho_bDO <- itsadug::start_value_rho(bam_mod_bDO, plot = T, lag = 2)
 
 
 bam_mod_bDO_2 <- bam(predictability ~ 
-                       s(doy, bs = 'cc', k = 12) +
-                       s(doy, by = site_id, bs = 'cc', k = 12, m = 1) + 
+                       s(Day, bs = 'cc', k = 12) +
+                       s(Day, by = site_id, bs = 'cc', k = 12, m = 1) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -167,10 +167,10 @@ draw(bam_mod_bDO_2)
 gam.check(bam_mod_bDO_2)
 concurvity(bam_mod_bDO_2)
 plot_predictions(bam_mod_bDO_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_bDO_2, select = "s(doy)") |>
+difference_smooths(bam_mod_bDO_2, select = "s(Day)") |>
   draw()
 
 
@@ -188,7 +188,7 @@ surface_DO_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -197,8 +197,8 @@ surface_DO_df <- PE_ts_P1D |>
 
 
 bam_mod_sDO <- bam(predictability ~ 
-                     s(doy, bs = 'cc') + 
-                     s(doy, by = site_id, bs = 'cc', m = 1) + 
+                     s(Day, bs = 'cc') + 
+                     s(Day, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
                    family = betar(link = 'logit'),
                    method = "fREML",
@@ -218,7 +218,7 @@ surface_DO_df %>%
   mutate(resids = residuals(bam_mod_sDO,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -228,8 +228,8 @@ rho_sDO <- itsadug::start_value_rho(bam_mod_sDO, plot = T, lag = 2)
 
 
 bam_mod_sDO_2 <- bam(predictability ~ 
-                       s(doy, bs = 'cc', k = 20) +
-                       s(doy, by = site_id, bs = 'cc', k = 20, m = 1) + 
+                       s(Day, bs = 'cc', k = 20) +
+                       s(Day, by = site_id, bs = 'cc', k = 20, m = 1) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -243,10 +243,10 @@ summary(bam_mod_sDO_2)
 draw(bam_mod_sDO_2)
 gam.check(bam_mod_sDO_2)
 plot_predictions(bam_mod_sDO_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_sDO_2, select = "s(doy)") |>
+difference_smooths(bam_mod_sDO_2, select = "s(Day)") |>
   draw()
 
 
@@ -266,7 +266,7 @@ bottom_Tw_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -275,8 +275,8 @@ bottom_Tw_df <- PE_ts_P1D |>
 
 
 bam_mod_bTw <- bam(predictability ~ 
-                     s(doy, bs = 'cc') + 
-                     s(doy, by = site_id, bs = 'cc', m = 1) + 
+                     s(Day, bs = 'cc') + 
+                     s(Day, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
                    family = betar(link = 'logit'),
                    method = "fREML",
@@ -297,7 +297,7 @@ bottom_Tw_df %>%
   mutate(resids = residuals(bam_mod_bTw,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -307,8 +307,8 @@ rho_bTw <- itsadug::start_value_rho(bam_mod_bTw, plot = T, lag = 2)
 
 
 bam_mod_bTw_2 <- bam(predictability ~ 
-                       s(doy, bs = 'cc', k = 15) + 
-                       s(doy, by = site_id, bs = 'cc', m = 1, k = 15) + 
+                       s(Day, bs = 'cc', k = 15) + 
+                       s(Day, by = site_id, bs = 'cc', m = 1, k = 15) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -322,10 +322,10 @@ summary(bam_mod_bTw_2)
 draw(bam_mod_bTw_2)
 gam.check(bam_mod_bTw_2)
 plot_predictions(bam_mod_bTw_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_bTw_2, select = "s(doy)") |>
+difference_smooths(bam_mod_bTw_2, select = "s(Day)") |>
   draw()
 # Surface SpCond ----------------------
 # Filter the data for each model
@@ -342,7 +342,7 @@ surface_SpCond_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -351,8 +351,8 @@ surface_SpCond_df <- PE_ts_P1D |>
 
 
 bam_mod_sSpCond <- bam(predictability ~ 
-                     s(doy, bs = 'cc') + 
-                     s(doy, by = site_id, bs = 'cc', m = 1) + 
+                     s(Day, bs = 'cc') + 
+                     s(Day, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
                    family = betar(link = 'logit'),
                    method = "fREML",
@@ -373,7 +373,7 @@ surface_SpCond_df %>%
   mutate(resids = residuals(bam_mod_sSpCond,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -383,8 +383,8 @@ rho_sSpCond <- itsadug::start_value_rho(bam_mod_sSpCond, plot = T, lag = 2)
 
 
 bam_mod_sSpCond_2 <- bam(predictability ~ 
-                       s(doy, bs = 'cc', k = 20) + 
-                       s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
+                       s(Day, bs = 'cc', k = 20) + 
+                       s(Day, by = site_id, bs = 'cc', k=20, m = 1) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -398,10 +398,10 @@ summary(bam_mod_sSpCond_2)
 draw(bam_mod_sSpCond_2)
 gam.check(bam_mod_sSpCond_2)
 plot_predictions(bam_mod_sSpCond_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_sSpCond_2, select = "s(doy)") |>
+difference_smooths(bam_mod_sSpCond_2, select = "s(Day)") |>
   draw()
 
 
@@ -420,7 +420,7 @@ surface_fDOM_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -429,8 +429,8 @@ surface_fDOM_df <- PE_ts_P1D |>
 
 
 bam_mod_sfDOM <- bam(predictability ~ 
-                     s(doy, bs = 'cc') + 
-                     s(doy, by = site_id, bs = 'cc', m = 1) + 
+                     s(Day, bs = 'cc') + 
+                     s(Day, by = site_id, bs = 'cc', m = 1) + 
                      site_id,
                    family = betar(link = 'logit'),
                    method = "fREML",
@@ -451,7 +451,7 @@ surface_fDOM_df %>%
   mutate(resids = residuals(bam_mod_sfDOM,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -461,8 +461,8 @@ rho_sfDOM <- itsadug::start_value_rho(bam_mod_sfDOM, plot = T, lag = 2)
 
 
 bam_mod_sfDOM_2 <- bam(predictability ~ 
-                       s(doy, bs = 'cc', k = 20) + 
-                       s(doy, by = site_id, bs = 'cc', k=20, m = 1) + 
+                       s(Day, bs = 'cc', k = 20) + 
+                       s(Day, by = site_id, bs = 'cc', k=20, m = 1) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -476,10 +476,10 @@ summary(bam_mod_sfDOM_2)
 draw(bam_mod_sfDOM_2)
 gam.check(bam_mod_sfDOM_2, old.style = F)
 plot_predictions(bam_mod_sfDOM_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_sfDOM_2, select = "s(doy)") |>
+difference_smooths(bam_mod_sfDOM_2, select = "s(Day)") |>
   draw()
 
 # Surface Chla ----------------------
@@ -497,7 +497,7 @@ surface_Chla_df <- PE_ts_P1D |>
   mutate(depth_m = factor(depth_m,ordered = F),
          site_id = factor(site_id,ordered = F),
          variable = factor(variable),
-         doy = yday(date),
+         Day = yday(date),
          year = year(date)) |> 
   group_by(site_id, variable, depth_m) |> 
   mutate(n = 1:n()) %>%
@@ -506,8 +506,8 @@ surface_Chla_df <- PE_ts_P1D |>
 
 
 bam_mod_sChla <- bam(predictability ~ 
-                       s(doy, bs = 'cc') + 
-                       s(doy, by = site_id, bs = 'cc', m = 1) + 
+                       s(Day, bs = 'cc') + 
+                       s(Day, by = site_id, bs = 'cc', m = 1) + 
                        site_id,
                      family = betar(link = 'logit'),
                      method = "fREML",
@@ -528,7 +528,7 @@ surface_Chla_df %>%
   mutate(resids = residuals(bam_mod_sChla,
                             type = 'working')) %>%
   group_by(site_id) %>%
-  arrange(doy) %>%
+  arrange(Day) %>%
   mutate(autocor = Box.test(resids, type = 'Ljung-Box')$p.value) %>%
   summarise(autocor = mean(autocor),
             sig = mean(autocor) < 0.05)
@@ -538,8 +538,8 @@ rho_sChla <- itsadug::start_value_rho(bam_mod_sChla, plot = T, lag = 2)
 
 
 bam_mod_sChla_2 <- bam(predictability ~ 
-                         s(doy, bs = 'cc', k = 20) + 
-                         s(doy, by = site_id, bs = 'cc', k=20, m=1) + 
+                         s(Day, bs = 'cc', k = 20) + 
+                         s(Day, by = site_id, bs = 'cc', k=20, m=1) + 
                          site_id,
                        family = betar(link = 'logit'),
                        method = "fREML",
@@ -553,17 +553,17 @@ summary(bam_mod_sChla_2)
 draw(bam_mod_sChla_2)
 gam.check(bam_mod_sChla_2)
 plot_predictions(bam_mod_sChla_2, 
-                 condition = c('doy', 
+                 condition = c('Day', 
                                'site_id'))
 
-difference_smooths(bam_mod_sChla_2, select = "s(doy)") |>
+difference_smooths(bam_mod_sChla_2, select = "s(Day)") |>
   draw()
 
 
 
 # Plots for main text ----
 theme_ms <- function() {
-  theme_bw() +
+  theme_bw(base_size = 14) +
     theme(legend.position = "bottom",
           legend.title = element_blank(),
           panel.grid.minor = element_blank())
@@ -572,7 +572,7 @@ theme_ms <- function() {
 
 library(ggpubr)
 p_sDO <- plot_predictions(bam_mod_sDO_2, 
-                          condition = c('doy', 
+                          condition = c('Day', 
                                         'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -583,11 +583,11 @@ p_sDO <- plot_predictions(bam_mod_sDO_2,
 man_colours <- viridis::rocket(n=2, begin = 0.8, end=0.2)
 
 p_bDO <- plot_predictions(bam_mod_bDO_2, 
-                          condition = c('doy', 
+                          condition = c('Day', 
                                         'site_id'), 
                           draw = F) |> 
   # manually make the plot to use linetype
-  ggplot(aes(x=doy)) +
+  ggplot(aes(x=Day)) +
   geom_line(aes(y=estimate, linetype = site_id, colour = site_id)) +
   geom_ribbon(aes(ymax = conf.high, ymin = conf.low, fill = site_id), alpha = 0.1) +
   scale_colour_manual(values = c(man_colours[1], man_colours[2], man_colours[2])) +
@@ -598,7 +598,7 @@ p_bDO <- plot_predictions(bam_mod_bDO_2,
   theme_ms()   
 
 p_sTw <- plot_predictions(bam_mod_sTw_2, 
-                          condition = c('doy', 
+                          condition = c('Day', 
                                         'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -607,7 +607,7 @@ p_sTw <- plot_predictions(bam_mod_sTw_2,
   theme_ms()
 
 p_bTw <- plot_predictions(bam_mod_bTw_2, 
-                          condition = c('doy', 
+                          condition = c('Day', 
                                         'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -616,7 +616,7 @@ p_bTw <- plot_predictions(bam_mod_bTw_2,
   theme_ms()
 
 p_sfDOM <- plot_predictions(bam_mod_sfDOM_2, 
-                            condition = c('doy', 
+                            condition = c('Day', 
                                           'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -625,7 +625,7 @@ p_sfDOM <- plot_predictions(bam_mod_sfDOM_2,
   theme_ms()
 
 p_sChla <- plot_predictions(bam_mod_sChla_2, 
-                            condition = c('doy', 
+                            condition = c('Day', 
                                           'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -634,7 +634,7 @@ p_sChla <- plot_predictions(bam_mod_sChla_2,
   theme_ms()
 
 p_sSpCond <- plot_predictions(bam_mod_sSpCond_2, 
-                              condition = c('doy', 
+                              condition = c('Day', 
                                             'site_id'))  + 
   scale_colour_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
   scale_fill_viridis_d(option = 'rocket', begin = 0.8, end = 0.2) +
@@ -650,12 +650,13 @@ p_all <-
                                     p_bTw, as_ggplot(p_legend), NULL, p_bDO, NULL),
                     nrow = 3, ncol = 5, heights = c(0.2, 1, 1), 
                     labels = c('Tw', 'SpCond', 'fDOM','DO',  'Chla'),
-                    label.x = 0.6, label.y = 0.6, hjust = 0.5,
-                    font.label = list(size = 12, face = 'bold'),
+                    label.x = 0.65, label.y = 0.6, hjust = 0.5,
+                    font.label = list(size = 14, face = 'bold'),
                     legend = F) 
 ggpubr::annotate_figure(p_all, 
-                        left = text_grob("Bottom                           Surface",
-                                         face = "bold", size = 12, rot = 90))
+                        left = text_grob("Bottom                              Surface",
+                                         face = "bold", size = 14, rot = 90)) |> 
+  ggsave(filename = 'Figure_5.png', height = 15, width = 30, units = 'cm')
 
 # Write output -----
 # Write the model output
