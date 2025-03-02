@@ -184,6 +184,30 @@ ggsave(Fig4, filename = 'Figure_4.png', width = 25, height = 15, units = 'cm')
 # Figure 5 in 05_gams.R
 
 # Supplementary Info plots -----------------
+# Example of shuffled time series
+original_ts <- targets_P1D_interp |> 
+  filter(variable == 'Chla_ugL',
+         site_id == 'FCR') |> 
+  ggplot(aes(x=date, y= observation)) +
+  geom_line() +
+  theme_bw() +
+  labs(title = 'Observed time series')
+
+example_shuffled <- targets_P1D_shuffled |> 
+  filter(n %in% 1:3, # 3 examples
+         variable == 'Chla_ugL',
+         site_id == 'FCR')  |> 
+  group_by(n) |> 
+  mutate(x = row_number()) |> 
+  ggplot(aes(x = x, y= observation)) +
+  geom_line() +
+  theme_bw() +
+  labs(title = 'Example of shuffled realisations') +
+  facet_wrap(~n, ncol = 1)
+
+
+ggarrange(ggarrange(NULL, original_ts, NULL, heights = c(0.6, 1.5, 0.5), ncol = 1),
+          example_shuffled)
 
 # PE of shuffled realisations -----
 design <- "
