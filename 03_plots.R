@@ -260,7 +260,7 @@ FigS3 <- PE_shuffled_P1D |>
         legend.background = element_rect(fill = "white", colour = NA),
         plot.margin = margin(0.6,0.6,0.6,0.6, "cm"))
 
-ggsave(FigS2, filename = 'Figure_S3.png', height = 15, width = 15, units = 'cm')
+ggsave(FigS3, filename = 'Figure_S3.png', height = 15, width = 15, units = 'cm')
 # Time series of PE
 
 FigS4 <- PE_ts_P1D |> 
