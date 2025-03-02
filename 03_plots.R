@@ -17,31 +17,36 @@ tau = 1
 # Figure 2 = conceptual methods figure
 
 # Figure 3 - observations ####
-targets_P1D_interp |>
+Fig3 <- targets_P1D_interp |>
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
                                                 'fDOM_QSU',
                                                 'DO_mgL',
                                                 'Chla_ugL'), 
-                           labels = c('Tw_C',
-                                      'SpCond_uScm',
-                                      'fDOM_QSU',
-                                      'DO_mgL',
-                                      'Chla_ugL')),
+                           labels = c('Tw',
+                                      'SpCond',
+                                      'fDOM',
+                                      'DO',
+                                      'Chla')),
+         units = ifelse(variable == 'Chla', 
+                        'ug/L',
+                        ifelse(variable == 'DO', 'mg/L',
+                               ifelse(variable == 'fDOM', 'QSU',
+                                      ifelse(variable == 'SpCond', 'uS/cm', 'Celsius')))),
          description = ifelse(site_id == 'FCR', 'with oxygenation',
                               'without oxygenation')) |> 
   ggplot(aes(x=date, y=observation, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
-  facet_grid(variable~site_id + description, scales="free_y") +
+  facet_grid(variable + units ~ site_id + description, scales="free_y") +
   scale_x_date(date_labels = "%d %b %y", breaks = '1 year', name = 'Date') +
   scale_colour_viridis_d(name = '', begin = 0.8, end = 0.4, option = 'viridis') +
-  theme_bw() +
+  theme_bw(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = 'top', 
         strip.background = element_rect(fill = 'white'))
-
+ggsave(plot = Fig3, filename = 'Figure_3.png', height = 15, width  = 15, units = 'cm')
 
 # Figure 4 - PE distributions ####
 summary_PE <- targets_P1D_interp |> 
@@ -98,9 +103,9 @@ PE_sitewise <- PE_ts_P1D |>
   na.omit() |> 
   ggplot()+
   geom_density_ridges(aes(x=predictability, y= fct_rev(variable),
-                   colour = variable, 
-                   fill = variable), 
-               alpha = 0.5, rel_min_height = 0.005) +
+                          colour = variable, 
+                          fill = variable), 
+                      alpha = 0.5, rel_min_height = 0.005) +
   geom_vline(data = filter(central_tendancy_PE_sitewise),
              aes(xintercept = median, colour = variable), 
              show.legend = F, linewidth = 0.8, alpha = 0.7, linetype = 'longdash') +
@@ -108,7 +113,7 @@ PE_sitewise <- PE_ts_P1D |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2)) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -163,7 +168,7 @@ PE_combined <- PE_ts_P1D |>
   scale_fill_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_colour_viridis_d(name = 'Variable_unit', option = 'plasma', begin = 0, end = 0.8) +
   scale_x_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1, 0.2))+
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(panel.grid.minor = element_blank(),
         legend.position = 'top', 
         axis.text.y = element_text(hjust = 1, vjust = -1),
@@ -171,13 +176,15 @@ PE_combined <- PE_ts_P1D |>
         strip.background = element_rect(fill = 'white', colour = NA), 
         panel.spacing.x = unit(1, "lines")) 
 
-ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
-                  widths = c(1,1.75), align = 'h',
-                  labels = c('a)', 'b)'))
+Fig4 <- ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T, 
+                          widths = c(1,1.75), align = 'h',
+                          labels = c('a)', 'b)'))
 
+ggsave(Fig4, filename = 'Figure_4.png', width = 25, height = 15, units = 'cm')
 # Figure 5 in 05_gams.R
 
 # Supplementary Info plots -----------------
+
 # PE of shuffled realisations -----
 design <- "
  AB#
@@ -185,7 +192,7 @@ design <- "
  GH#
 "
 
-PE_shuffled_P1D |>
+FigS3 <- PE_shuffled_P1D |>
   filter(n %in% 400:500) |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -210,44 +217,54 @@ PE_shuffled_P1D |>
                  colour = site_id), 
              show.legend = F, size = 2.5, shape = 8, 
              position=position_dodge(width = 1)) +
-  theme_bw()  + 
+  theme_bw(base_size = 14)  + 
   labs(x='predictability') +
   scale_colour_manual(name = '', values = viridis::mako(n=2, begin = 0.8, end = 0.2), 
                       labels = c('FCR - with oxygenation', 
                                  'BVR - without hypolimentic oxygenation')) +
   theme(panel.grid.minor = element_blank(),
         strip.background = element_rect(fill = 'white'),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         axis.ticks.y = element_blank(),
-        legend.position.inside = c(0.65, 0.25),
+        legend.position.inside = c(0.65, 0.2),
         legend.position = "inside",
-        legend.background = element_rect(fill = "white", colour = NA))
+        legend.background = element_rect(fill = "white", colour = NA),
+        plot.margin = margin(0.6,0.6,0.6,0.6, "cm"))
 
+ggsave(FigS2, filename = 'Figure_S3.png', height = 15, width = 15, units = 'cm')
 # Time series of PE
 
-PE_ts_P1D |> 
+FigS4 <- PE_ts_P1D |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
                                                 'SpCond_uScm',
                                                 'fDOM_QSU',
                                                 'DO_mgL',
                                                 'Chla_ugL'), 
-                           labels = c('Tw_C',
-                                      'SpCond_uScm',
-                                      'fDOM_QSU',
-                                      'DO_mgL',
-                                      'Chla_ugL')),
+                           labels = c('Tw',
+                                      'SpCond',
+                                      'fDOM',
+                                      'DO',
+                                      'Chla')),
+         units = ifelse(variable == 'Chla', 
+                        'ug/L',
+                        ifelse(variable == 'DO', 'mg/L',
+                               ifelse(variable == 'fDOM', 'QSU',
+                                      ifelse(variable == 'SpCond', 'uS/cm', 'Celsius')))),
          description = ifelse(site_id == 'FCR', 'with oxygenation',
                               'without oxygenation'),
          predictability = 1 - PE) |> 
   ggplot(aes(x=date, y=predictability, colour = depth_m)) +
   geom_line(linewidth = 0.8) +
-  facet_grid(variable~site_id + description, scales="free_y") +
+  facet_grid(variable + units ~ site_id + description) +
   scale_x_date(date_labels = "%d %b %y", breaks = '1 year', name = 'Date') +
+  scale_y_continuous(breaks = seq(0, 1, 0.5)) +
   scale_colour_viridis_d(name = '', begin = 0.8, end = 0.4, option = 'viridis') +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+  theme_bw(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = 'top', 
         strip.background = element_rect(fill = 'white'))
+ggsave(plot = FigS4, filename = 'Figure_S4.png', height = 15, width  = 15, units = 'cm')
+
