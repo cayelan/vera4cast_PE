@@ -2,6 +2,7 @@
 # if you need to install an older version of a package you can find the urls on CRAN
 # https://stackoverflow.com/questions/17082341/installing-older-version-of-r-package
 # e.g. for zoo the archive can be found here https://cran.r-project.org/src/contrib/Archive/zoo/
+# analyses were conducted in R version 4.2 and 4.4
 
 install.packages('tidyverse') # version 2.0.0
 install.packages('zoo') # version 1.8.12
@@ -19,8 +20,8 @@ install.packages('gratia') # version 0.9.2
 remotes::install_github('teunbrand/ggh4x') # version 0.3.0.9000
 
 # required statistical packages
-install.packages('car')
+install.packages('car') # version 3.1.3
 install.packages('broom') # version 1.0.5
-install.packages('lmer4')
+install.packages('lme4') # version 1.1.36
 install.packages('mgcv') # version 1.91
 install.packages('marginaleffects') # version 0.24.0
