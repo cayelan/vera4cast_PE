@@ -71,6 +71,7 @@ strat_dates <- calc_strat_dates(density_diff = 0.1, temp_profiles = temp_profile
 
 
 # Generate shuffles
+set.seed(100)  # for reproducability
 targets_P1D_shuffled <- targets_P1D_interp |>
   na.omit() |> 
   tsibble::as_tsibble(index = date, key = c(variable, site_id, depth_m)) |> 
