@@ -249,8 +249,8 @@ FigS3 <- PE_shuffled_P1D |>
   theme_bw(base_size = 14)  + 
   labs(x='predictability') +
   scale_colour_manual(name = '', values = viridis::mako(n=2, begin = 0.8, end = 0.2), 
-                      labels = c('FCR - with oxygenation', 
-                                 'BVR - without hypolimentic oxygenation')) +
+                      labels = c('BVR - without oxygenation',
+                                 'FCR - with oxygenation')) +
   theme(panel.grid.minor = element_blank(),
         strip.background = element_rect(fill = 'white'),
         axis.text.x = element_text(angle = 45, hjust = 1),
