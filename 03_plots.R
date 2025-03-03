@@ -181,11 +181,12 @@ Fig4 <- ggpubr::ggarrange(PE_combined, PE_sitewise, common.legend = T,
                           labels = c('(a)', '(b)'))
 
 ggsave(Fig4, filename = 'Figure_4.png', width = 25, height = 15, units = 'cm')
-# Figure 5 in 05_gams.R
+# Figure 5 is generated in "05_gams.R" script
 
-# Supplementary Info plots -----------------
-# Figure S1 can be found in supplementary analyses
+# Appendix S1 plots -----------------
+# Figure S1 is generated in the supplementary analysis script (see: "SI_analysis/SI_analysis.Rmd")
 
+# Figure S2
 # Example of shuffled time series
 original_ts <- targets_P1D_interp |> 
   filter(variable == 'Chla_ugL',
@@ -207,11 +208,12 @@ example_shuffled <- targets_P1D_shuffled |>
   labs(title = 'Examples of shuffled realisations') +
   facet_wrap(~n, ncol = 1)
 
-
 ggarrange(ggarrange(NULL, original_ts, NULL, heights = c(0.6, 1.5, 0.5), ncol = 1),
           example_shuffled) |> 
   ggsave(filename = 'Figure_S2.png', height = 15, width = 25, units = 'cm')
 
+
+# Figure S3
 # PE of shuffled realisations -----
 design <- "
  AB#
@@ -263,6 +265,7 @@ FigS3 <- PE_shuffled_P1D |>
 ggsave(FigS3, filename = 'Figure_S3.png', height = 15, width = 15, units = 'cm')
 # Time series of PE
 
+# Figure S4
 FigS4 <- PE_ts_P1D |> 
   mutate(depth_m = factor(depth_m, levels = c('surface', 'bottom')),
          variable = factor(variable, levels = c('Tw_C',
@@ -295,4 +298,4 @@ FigS4 <- PE_ts_P1D |>
         strip.background = element_rect(fill = 'white'))
 ggsave(plot = FigS4, filename = 'Figure_S4.png', height = 15, width  = 15, units = 'cm')
 
-# Figure S5 can be found in supplementary analyses
+# Figure S5 is generated in the supplementary analysis script (see: "SI_analysis/SI_analysis.Rmd")

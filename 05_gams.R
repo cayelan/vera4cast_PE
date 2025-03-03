@@ -11,7 +11,6 @@ library(lubridate)
 library(gratia)
 library(marginaleffects)
 
-# PE_ts_P1D <- read_csv('temp_dat.csv')
 write_model_output <- TRUE
 
 # Surface Tw ----------------------
@@ -46,12 +45,13 @@ bam_mod_sTw <- bam(predictability ~
                data = surface_Tw_df,
                discrete = T)
 
-# summary(bam_mod_sTw)
-# draw(bam_mod_sTw)
-# 
-# gam.check(bam_mod_sTw)
-# pacf(residuals(bam_mod_sTw,
-#                type = 'working'))
+# View model summary statistics
+summary(bam_mod_sTw)
+draw(bam_mod_sTw)
+ 
+gam.check(bam_mod_sTw)
+pacf(residuals(bam_mod_sTw,
+                type = 'working'))
 
 # test for significant autocorrelation
 surface_Tw_df %>%

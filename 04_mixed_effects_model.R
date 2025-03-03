@@ -72,5 +72,5 @@ Q2_LMM <- car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
 
 ## Need to export Q2_LMM to create stats table
 #write.csv(broom::tidy(Q2_LMM),"Q2_LMMsummarytable.csv", row.names=F)
-#write.table((as.matrix(summary(model_surface)$coefficients)), "Q2_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
+#write.table((as.matrix(summary(model_Tw_DO)$coefficients)), "Q2_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
 
