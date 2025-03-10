@@ -80,3 +80,20 @@ depth_analysis_Tw <- PE_ts_P1D |>
   count(PE_1>0.5)
 #how many bottom water temp 1-PE values are >0.5?
 
+
+# duration of ice cover
+infile <- "https://pasta.lternet.edu/package/data/eml/edi/456/5/ebfaad16975326a7b874a21beb50c151" 
+
+ice_continuous <- get_ice_continuous(infile)
+
+# how many days of ice cover per winter?
+# offset the year by 6 months to get continuous winters June-June
+ice_continuous |> 
+  dplyr::filter(year(Date) %in% c(2021, 2022, 2023, 2024)) |>
+  mutate(ice_year = year(Date - days(6*30))) |> 
+  dplyr::filter(IceOn == 1) |> 
+  reframe(.by = c(Reservoir, ice_year),
+          ice_days = n_distinct(Date), 
+          earliest = min(Date),
+          latest = max(Date))
+  

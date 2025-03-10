@@ -366,3 +366,40 @@ calc_strat_dates <- function(density_diff = 0.1,
   
   return(na.omit(strat_dates))
 }
+
+
+get_ice_continuous <- function(infile) {
+  
+  historic_df <- readr::read_csv(infile, show_col_types = F) |> 
+    filter(Site == 50)
+  
+  # apply to each reservoir
+  all_ice <- NULL
+  for (site_id in unique(historic_df$Reservoir)) {
+    
+    # dates
+    period <- historic_df |>
+      dplyr::filter(Reservoir == site_id) |> 
+      dplyr::reframe(.by = Reservoir, 
+                     first = min(Date),
+                     last = max(Date))
+    
+    # get all the days to fill in with 0
+    all_dates <- expand.grid(Date = seq.Date(period$first,
+                                             period$last, by = 'day'),
+                             Reservoir = site_id)
+    
+    
+    ice_subset <- historic_df |>
+      dplyr::filter(Reservoir == site_id) |> 
+      right_join(all_dates, by = join_by(Reservoir, Date)) |> 
+      arrange(Date) |> 
+      mutate(IceOn = zoo::na.locf(IceOn),
+             IceOff = zoo::na.locf(IceOff)) |> 
+      select(Reservoir, Date, IceOn, IceOff)
+    
+    all_ice <- bind_rows(all_ice, ice_subset)
+  }
+  
+  return(all_ice)
+}
