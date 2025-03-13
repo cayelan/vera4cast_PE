@@ -12,6 +12,8 @@ library(lme4)
 library(car)
 library(broom)
 
+write_output <- FALSE
+
 # Model using the P1D (daily) subsampled data with the PE calculated using a 50 day moving window
 glimpse(PE_ts_P1D)
 
@@ -35,8 +37,11 @@ summary(model_surface)
 Q1_LMM<-car::Anova(model_surface, type = 3, test.statistic = 'F')
 
 # Need to export Q1_LMM to create stats table
-#write.csv(broom::tidy(Q1_LMM),"Q1_LMMsummarytable.csv", row.names=F)
-#write.table((as.matrix(summary(model_surface)$coefficients)), "Q1_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
+if (write_output) {
+  write.csv(broom::tidy(Q1_LMM),"Q1_LMMsummarytable.csv", row.names=F)
+  write.table((as.matrix(summary(model_surface)$coefficients)), "Q1_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
+  
+}
 
 ## ----- Reorder the factors and check output
 ## Water temp will be listed first in this model
@@ -71,6 +76,9 @@ summary(model_Tw_DO)
 Q2_LMM <- car::Anova(model_Tw_DO, type = 3, test.statistic = 'F')
 
 ## Need to export Q2_LMM to create stats table
-#write.csv(broom::tidy(Q2_LMM),"Q2_LMMsummarytable.csv", row.names=F)
-#write.table((as.matrix(summary(model_Tw_DO)$coefficients)), "Q2_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
+if (write_output) {
+  write.csv(broom::tidy(Q2_LMM),"Q2_LMMsummarytable.csv", row.names=F)
+  write.table((as.matrix(summary(model_Tw_DO)$coefficients)), "Q2_LMM_fixedeffects.csv", row.names = T, col.names=T, sep=",")
+  
+}
 
