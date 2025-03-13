@@ -2,6 +2,8 @@
 
 This repository provides the code needed to reproduce the analyses in the manuscript "High-frequency monitoring data reveal substantial variability in the intrinsic predictability of ecosystem dynamics" by Carey, Olsson, Breef-Pilz, and Thomas.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15020287.svg)](https://doi.org/10.5281/zenodo.15020287)
+
 ## Workflow scripts
 
 These files need to be run in order and do not create any intermediate files, so they should all be run every session.
