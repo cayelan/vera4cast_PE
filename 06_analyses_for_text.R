@@ -7,23 +7,29 @@
 
 library(tidyr)
 
+# make it consistent across reservoirs
+start_date <- targets_P1D_interp |> 
+  reframe(.by = c(variable, depth_m, site_id), 
+          start = min(date, na.rm = T)) |> 
+  reframe(last_start = max(start)) |> 
+  pull(last_start)
 
 #Methods site description
 BVRdepth <- read.csv(bvre_EDI) |> 
-  filter(DateTime>"2020-06-18") |> 
+  filter(DateTime>start_date) |> 
   select(DateTime, LvlDepth_m_13) |> 
   drop_na() |> 
   summarise(BVRmax_depth = max(LvlDepth_m_13))
 
 FCRdepth <- read.csv(fcre_EDI) |> 
-  filter(DateTime>"2020-06-18") |> 
+  filter(DateTime>start_date) |> 
   select(DateTime, LvlDepth_m_9) |> 
   drop_na() |> 
   summarise(FCRmax_depth = max(LvlDepth_m_9))
 
 #Results paragraph 1
 anoxia_cal <- targets_P1D |>
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="DO_mgL") |> 
   group_by(site_id) |> 
   count(observation<=2)
@@ -31,7 +37,7 @@ anoxia_cal <- targets_P1D |>
 
 #Results paragraph 1
 spcond_median <- targets_P1D |> 
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="SpCond_uScm") |>
   group_by(site_id) |> 
   drop_na() |> 
@@ -40,14 +46,14 @@ spcond_median <- targets_P1D |>
 
 #Results paragraph 1
 fdom_avg <- targets_P1D |> 
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="fDOM_QSU") |>
   group_by(site_id) |> 
   drop_na() |> 
   summarise(fdom_avg = mean(observation))
 
 chla_avg <- targets_P1D |> 
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="Chla_ugL") |>
   group_by(site_id) |> 
   drop_na() |> 
@@ -61,7 +67,7 @@ sort(1-summary_PE$PE)
 
 #Results paragraph X
 depth_analysis_DO <- PE_ts_P1D |> 
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="DO_mgL",
          depth_m=="bottom") |> 
   group_by(site_id) |> 
@@ -71,7 +77,7 @@ depth_analysis_DO <- PE_ts_P1D |>
 #how many bottom DO 1-PE values are >0.5?
 
 depth_analysis_Tw <- PE_ts_P1D |> 
-  filter(date>"2020-06-18",
+  filter(date>start_date,
          variable=="Tw_C",
          depth_m=="bottom") |> 
   group_by(site_id) |> 
