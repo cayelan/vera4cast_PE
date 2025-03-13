@@ -1,4 +1,4 @@
-#Intrinsic predictability analysis for VERA (Virginia Reservoir Ecosystem Analysis)
+# Intrinsic predictability analysis for VERA (Virginia Reservoir Ecosystem Analysis)
 
 This repository provides the code needed to reproduce the analyses in the manuscript "High-frequency monitoring data reveal substantial variability in the intrinsic predictability of ecosystem dynamics" by Carey, Olsson, Breef-Pilz, and Thomas.
 
