@@ -31,9 +31,10 @@ FCRdepth <- read.csv(fcre_EDI) |>
 anoxia_cal <- targets_P1D |>
   filter(date>start_date,
          variable=="DO_mgL") |> 
-  group_by(site_id) |> 
-  count(observation<=2)
-#gives number of days that meet 2 mg/L DO anoxia criteria in both reservoirs
+  mutate(year=year(date)) |> 
+  group_by(site_id, year) |> 
+  count(observation<2)
+#gives number of days that meet 2 mg/L DO anoxia criteria in both reservoirs per year
 
 #Results paragraph 1
 spcond_median <- targets_P1D |> 
@@ -65,7 +66,7 @@ chla_avg <- targets_P1D |>
 sort(1-summary_PE$PE)
 #gives range of minimum and maximum PE
 
-#Results paragraph X
+#Results paragraph 4
 depth_analysis_DO <- PE_ts_P1D |> 
   filter(date>start_date,
          variable=="DO_mgL",
@@ -86,10 +87,9 @@ depth_analysis_Tw <- PE_ts_P1D |>
   count(PE_1>0.5)
 #how many bottom water temp 1-PE values are >0.5?
 
-
+# Discussion
 # duration of ice cover
 infile <- "https://pasta.lternet.edu/package/data/eml/edi/456/5/ebfaad16975326a7b874a21beb50c151" 
-
 ice_continuous <- get_ice_continuous(infile)
 
 # how many days of ice cover per winter?
@@ -102,4 +102,9 @@ ice_continuous |>
           ice_days = n_distinct(Date), 
           earliest = min(Date),
           latest = max(Date))
-  
+
+#median PE across all time series
+#need to get whole-period PE for all variables
+median(1-summary_PE$PE)
+min(1-summary_PE$PE)
+max(1-summary_PE$PE)
