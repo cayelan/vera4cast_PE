@@ -105,14 +105,15 @@ downsample <- function(ts,
     ts_downsample <- 
       ts |> 
       mutate(target = as_datetime(paste0(as_date(datetime), ' ', target_time)), 
-             date = as_date(datetime)) |> 
+             date = as_date(datetime),
+             distance = abs(as.numeric(datetime - target))) |> 
       tsibble::index_by(date) |> 
       tsibble::group_by_key() |> 
       # na.omit() |> 
       dplyr::summarise(observation_aggregate = mean(observation, na.rm = T),
-                       observation_sample = nth(observation, which.min(abs(as.numeric(datetime - target)))), # takes the observation closest
+                       observation_sample = nth(observation, which.min(distance)), # takes the observation closest
                        n = n(),
-                       distance = min(abs(as.numeric(datetime - target, 'hours')))) |> 
+                       distance = min(distance)) |> 
       dplyr::mutate(observation_aggregate = ifelse(method == 'aggregate' & n > 6*24/2,
                                                    observation_aggregate, NA),
                     observation_sample = ifelse(method == 'sample' & distance <= max_distance_t,
