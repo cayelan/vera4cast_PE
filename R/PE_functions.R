@@ -4,7 +4,10 @@
 #' @param tie_method method used to break ties
 #' @param D embedding dimension
 #' @param tau the embedding time delay
+#' @param ignore_gaps should gaps be ignored logical. NAs are removed
+#' @param max_missing what proportion of missingness is acceptual to still calculate PE
 #' @param use_weights should the weighted or unweighted PE be calculated?
+#'
 #' @returns a number
 
 calculate_PE <- function(x, 
@@ -13,10 +16,7 @@ calculate_PE <- function(x,
                          tau = 1, # Embedding time delay (1)
                          use_weights = T,
                          ignore_gaps = T,
-                         max_missing = 0.1,
-                         bootstrap_CI = F,
-                         CI = 0.95,
-                         bootstrap_n = 1000) {
+                         max_missing = 0.1) {
 
   # message('start ', x[1], ' end ', x[length(x)])
   # figure out how many continuous missing there are
@@ -66,27 +66,11 @@ calculate_PE <- function(x,
       
       PE <- sum_weights/denom 
       
-      if (bootstrap_CI) {
-        PE_confint <- calculate_PE_CI(PE = PE,
-                                      D =  D,
-                                      tau =  tau,
-                                      tie_method = tie_method,
-                                      x_emb =  x_emb,
-                                      B = bootstrap_n,
-                                      use_weights = use_weights,
-                                      CI = CI)
-        
-        return(c(mean=PE, PE_confint))
-        
-      }else {
-        return(PE)
-      }
-      
+      return(PE)
       
     }
     
   }
-  
   
   
 }

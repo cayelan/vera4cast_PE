@@ -4,6 +4,7 @@
 #' @param length.out number - how long should the resampled timeseries be
 #' @param n number - how many times should the sampling occur
 #' @param doy vector of days associates to the ts (optional)
+#'
 #' @returns a dataframe 
 
 resample <- function(ts, length.out = 100, n = 100, doy = NA) {
@@ -37,10 +38,13 @@ resample <- function(ts, length.out = 100, n = 100, doy = NA) {
 
 #' Downsample timeseries
 #' 
-#' @param ts a dataframe of raw timeseries data (single site-variable-depth combination), needs a datetime column
-#' @param out_freq string - what should the temporal frequency of the output be (hourly, weekly)
-#' @param method string - how should the downsampling occur - aggregate or sample
-#' @param max_distance
+#' @param ts a dataframe of raw timeseries data (single site-variable-depth combination)
+#' Needs a datetime column that is regularly sampled at the timestep smaller than the out_freq
+#' @param out_freq string - what should the temporal frequency of the output be ('hourly', 'daily', 'weekly')
+#' @param method string - how should the downsampling occur - 'aggregate' or 'sample'
+#' @param target_out for 'sample' what is the target time to sample HH:MM:SS for daily, MM:SS for hourly, day of week for weekly
+#' @param max_distance how far from the target is okay? for weekly this is in days, for daily in hours, and hourly in minutes. Default is any distance
+#'
 #' @returns a dataframe
 
 downsample <- function(ts, 
